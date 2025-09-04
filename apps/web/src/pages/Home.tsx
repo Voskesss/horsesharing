@@ -4,10 +4,13 @@ import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { HeartIcon, UsersIcon, ShieldCheckIcon, StarIcon, MagnifyingGlassIcon, HomeIcon } from '@heroicons/react/24/outline';
 
 const Home = () => {
-  const { isAuthenticated, isLoading, logout } = useKindeAuth();
+  const kindeAuth = useKindeAuth();
+  const { isAuthenticated, isLoading, logout, user } = kindeAuth;
   const navigate = useNavigate();
   
   console.log('Home - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+  console.log('Home - user:', user);
+  console.log('Home - KindeAuth object:', kindeAuth);
   
   const features = [
     {
@@ -60,7 +63,7 @@ const Home = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              {!isLoading && isAuthenticated ? (
+              {isAuthenticated && !isLoading ? (
                 <div className="flex flex-col sm:flex-row gap-4">
                   <button
                     onClick={() => navigate('/discover')}
@@ -82,6 +85,11 @@ const Home = () => {
                   >
                     Uitloggen
                   </button>
+                </div>
+              ) : isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">Laden...</span>
                 </div>
               ) : (
                 <>

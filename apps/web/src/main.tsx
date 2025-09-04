@@ -15,12 +15,12 @@ const queryClient = new QueryClient({
   },
 });
 
-// Clear all Kinde localStorage data to fix token errors
-Object.keys(localStorage).forEach(key => {
-  if (key.startsWith('kinde') || key.startsWith('@kinde')) {
-    localStorage.removeItem(key);
-  }
-});
+// Don't clear localStorage - this breaks authentication persistence
+// Object.keys(localStorage).forEach(key => {
+//   if (key.startsWith('kinde') || key.startsWith('@kinde')) {
+//     localStorage.removeItem(key);
+//   }
+// });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>
@@ -32,7 +32,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         logoutUri="http://localhost:3000"
         audience=""
         scope="openid profile email offline"
-        isDangerouslyUseLocalStorage={false}
+        isDangerouslyUseLocalStorage={true}
         onRedirectCallback={() => {
           console.log('Kinde redirect callback triggered');
         }}

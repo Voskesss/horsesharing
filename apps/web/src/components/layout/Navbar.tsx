@@ -7,8 +7,13 @@ import { Bars3Icon, XMarkIcon, UserIcon, ArrowRightOnRectangleIcon, Cog6ToothIco
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { isAuthenticated, user, logout } = useKindeAuth();
+  const kindeAuth = useKindeAuth();
+  const { isAuthenticated, user, logout, isLoading } = kindeAuth;
   const location = useLocation();
+  
+  console.log('Navbar - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+  console.log('Navbar - user:', user);
+  console.log('Navbar - KindeAuth object:', kindeAuth);
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -53,7 +58,11 @@ const Navbar = () => {
             })}
 
             {/* Auth Section */}
-            {isAuthenticated ? (
+            {isLoading ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+              </div>
+            ) : isAuthenticated ? (
               <div className="relative">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}

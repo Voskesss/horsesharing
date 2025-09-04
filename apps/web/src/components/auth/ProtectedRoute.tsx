@@ -7,8 +7,13 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading } = useKindeAuth();
+  const kindeAuth = useKindeAuth();
+  const { isAuthenticated, isLoading } = kindeAuth;
+  
+  console.log('ProtectedRoute - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+  console.log('ProtectedRoute - KindeAuth object:', kindeAuth);
 
+  // Wait longer for Kinde to initialize properly
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -18,9 +23,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!isAuthenticated) {
+    console.log('ProtectedRoute - User not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
+  console.log('ProtectedRoute - User authenticated, rendering children');
   return <>{children}</>;
 };
 
