@@ -23,22 +23,22 @@ Object.keys(localStorage).forEach(key => {
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <KindeProvider
-    clientId="d80a119a2a8a453a899f05af988a592b"
-    domain="https://horsesharing.kinde.com"
-    redirectUri="http://localhost:3000/callback"
-    logoutUri="http://localhost:3000"
-    audience=""
-    scope="openid profile email offline"
-    isDangerouslyUseLocalStorage={false}
-    onRedirectCallback={() => {
-      console.log('Kinde redirect callback triggered');
-    }}
-  >
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <KindeProvider
+        clientId="d80a119a2a8a453a899f05af988a592b"
+        domain="https://horsesharing.kinde.com"
+        redirectUri="http://localhost:3000/callback"
+        logoutUri="http://localhost:3000"
+        audience=""
+        scope="openid profile email offline"
+        isDangerouslyUseLocalStorage={false}
+        onRedirectCallback={() => {
+          console.log('Kinde redirect callback triggered');
+        }}
+      >
         <App />
-      </BrowserRouter>
-    </QueryClientProvider>
-  </KindeProvider>
+      </KindeProvider>
+    </BrowserRouter>
+  </QueryClientProvider>
 );

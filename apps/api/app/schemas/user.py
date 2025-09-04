@@ -15,6 +15,11 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class UserCreate(BaseModel):
+    role: UserRole
+    phone: Optional[str] = None
+    is_minor: bool = False
+
 class UserUpdate(BaseModel):
     role: Optional[UserRole] = None
     phone: Optional[str] = None

@@ -70,16 +70,10 @@ async def get_current_user(
     
     user = db.query(User).filter(User.sub == user_sub).first()
     if user is None:
-        # Create user if doesn't exist
-        user = User(
-            sub=user_sub,
-            email=payload.get("email"),
-            role=UserRole.RIDER,  # Default role
-            is_minor=False  # Will be updated during onboarding
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found. Please complete onboarding first."
         )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
     
     return user
 

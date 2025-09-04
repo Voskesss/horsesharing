@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { Navigate } from 'react-router-dom';
 import { UserIcon, HomeIcon } from '@heroicons/react/24/outline';
+import { api } from '../utils/api';
 
 const Onboarding = () => {
   const { user, isAuthenticated } = useKindeAuth();
@@ -17,34 +18,23 @@ const Onboarding = () => {
     setIsSubmitting(true);
     setUserType(type);
     
-    // TODO: Send to backend API to create user profile
+    // Create user via backend API
     try {
-      const response = await fetch('/api/v1/profiles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_type: type,
-          kinde_user_id: user?.id,
-          email: user?.email,
-          first_name: user?.given_name,
-          last_name: user?.family_name,
-        }),
+      // For now, use placeholder token - will implement proper Kinde token later
+      const token = 'placeholder-token';
+      
+      await api.createUser(token, {
+        role: type.toUpperCase() as 'RIDER' | 'OWNER',
+        phone: undefined,
+        is_minor: false
       });
       
-      if (response.ok) {
-        // Redirect to dashboard
-        window.location.href = '/dashboard';
-      } else {
-        // For now, just redirect to dashboard even if API fails
-        console.log('API not ready yet, redirecting to dashboard anyway');
-        window.location.href = '/dashboard';
-      }
+      console.log('User created successfully, redirecting to dashboard');
+      window.location.href = '/dashboard';
     } catch (error) {
-      console.error('Error creating profile:', error);
+      console.error('Error creating user:', error);
       // For now, just redirect to dashboard even if API fails
-      console.log('API not ready yet, redirecting to dashboard anyway');
+      console.log('API call failed, redirecting to dashboard anyway');
       window.location.href = '/dashboard';
     } finally {
       setIsSubmitting(false);
