@@ -14,6 +14,9 @@ import Messages from './pages/Messages';
 import Profile from './pages/Profile';
 import Horses from './pages/Horses';
 import Callback from './pages/Callback';
+import ProfileChoice from './pages/ProfileChoice';
+import RiderProfile from './pages/RiderProfile';
+import OwnerProfile from './pages/OwnerProfile';
 
 function App() {
   // Homepage en login zijn publiek toegankelijk, geen loading spinner nodig
@@ -58,6 +61,21 @@ function App() {
           <Route path="/horses" element={
             <ProtectedRoute>
               <Horses />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile-choice" element={
+            <ProtectedRoute>
+              <ProfileChoice />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/rider" element={
+            <ProtectedRoute>
+              <RiderProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/owner" element={
+            <ProtectedRoute>
+              <OwnerProfile />
             </ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
