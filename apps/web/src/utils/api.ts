@@ -45,6 +45,9 @@ export const api = {
   },
 
   async createUser(token: string, userData: { role: string; phone?: string; is_minor: boolean }) {
+    console.log('Creating user with token:', token === 'placeholder-token' ? 'placeholder' : 'real token');
+    console.log('User data:', userData);
+    
     const response = await fetch(`${API_BASE_URL}/api/v1/users/`, {
       method: 'POST',
       headers: {
@@ -55,7 +58,9 @@ export const api = {
     });
     
     if (!response.ok) {
-      throw new Error('Failed to create user');
+      const errorText = await response.text();
+      console.error('Create user error response:', response.status, errorText);
+      throw new Error(`Failed to create user: ${response.status} - ${errorText}`);
     }
     
     return response.json();

@@ -19,27 +19,34 @@ const Callback = () => {
         try {
           console.log(`Checking login for user: ${user.email}`);
           
-          // Voor nu skippen we de backend check en gaan altijd naar onboarding
-          // Later implementeren we echte token handling
-          console.log('Skipping backend check for now, redirecting to onboarding');
-          navigate('/onboarding', { replace: true });
+          // Probeer echte Kinde token op te halen
+          console.log('Getting Kinde access token...');
+          let token;
+          try {
+            token = await kindeAuth.getToken();
+            console.log('Token received:', token ? 'Success' : 'Failed');
+          } catch (tokenError) {
+            console.error('Error getting token:', tokenError);
+            console.log('Using placeholder token as fallback');
+            token = 'placeholder-token';
+          }
           
-          /* TODO: Implementeer echte backend check
-          console.log('Using placeholder token for backend check...');
-          const token = 'placeholder-token';
-          
-          console.log('Checking if user exists in backend...');
-          const userExists = await api.checkUserExists(token);
-          console.log('User exists in backend:', userExists);
-          
-          if (userExists) {
-            console.log('User exists, redirecting to dashboard');
-            navigate('/dashboard', { replace: true });
+          if (token && token !== 'placeholder-token') {
+            console.log('Checking if user exists in backend with real token...');
+            const userExists = await api.checkUserExists(token);
+            console.log('User exists in backend:', userExists);
+            
+            if (userExists) {
+              console.log('User exists, redirecting to dashboard');
+              navigate('/dashboard', { replace: true });
+            } else {
+              console.log('User does not exist, redirecting to onboarding');
+              navigate('/onboarding', { replace: true });
+            }
           } else {
-            console.log('User does not exist, redirecting to onboarding');
+            console.log('No valid token available, redirecting to onboarding');
             navigate('/onboarding', { replace: true });
           }
-          */
         } catch (error) {
           console.error('Error in callback:', error);
           console.log('Error occurred, redirecting to onboarding');

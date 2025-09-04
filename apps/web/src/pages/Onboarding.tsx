@@ -1,41 +1,61 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { UserIcon, HomeIcon } from '@heroicons/react/24/outline';
 import { api } from '../utils/api';
 
 const Onboarding = () => {
-  const { user, isAuthenticated } = useKindeAuth();
-  const [userType, setUserType] = useState<'rider' | 'owner' | null>(null);
+  const kindeAuth = useKindeAuth();
+  const { user, isAuthenticated } = kindeAuth;
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  const handleUserTypeSelect = async (type: 'rider' | 'owner') => {
+  const handleUserTypeSelect = async (type: 'rider' | 'owner' | 'both') => {
     setIsSubmitting(true);
-    setUserType(type);
     
     // Create user via backend API
     try {
-      // For now, use placeholder token - will implement proper Kinde token later
-      const token = 'placeholder-token';
+      // Get real Kinde token
+      let token;
+      try {
+        // @ts-ignore - getToken exists but TypeScript doesn't recognize it
+        token = await kindeAuth.getToken();
+        console.log('Token received for user creation:', token ? 'Success' : 'Failed');
+      } catch (tokenError) {
+        console.error('Error getting token:', tokenError);
+        token = 'placeholder-token';
+      }
       
       await api.createUser(token, {
-        role: type.toUpperCase() as 'RIDER' | 'OWNER',
+        role: type.toUpperCase() as 'RIDER' | 'OWNER' | 'BOTH',
         phone: undefined,
         is_minor: false
       });
       
-      console.log('User created successfully, redirecting to dashboard');
-      window.location.href = '/dashboard';
+      console.log('User created successfully');
+      
+      // Navigate based on role selection
+      if (type === 'both') {
+        // If both, let user choose which profile to fill first
+        navigate('/profile-choice', { replace: true });
+      } else {
+        // If single role, go directly to that profile
+        navigate(`/profile/${type}`, { replace: true });
+      }
     } catch (error) {
       console.error('Error creating user:', error);
-      // For now, just redirect to dashboard even if API fails
-      console.log('API call failed, redirecting to dashboard anyway');
-      window.location.href = '/dashboard';
+      // For now, continue with flow even if API fails
+      console.log('API call failed, continuing with profile setup');
+      if (type === 'both') {
+        navigate('/profile-choice', { replace: true });
+      } else {
+        navigate(`/profile/${type}`, { replace: true });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -96,6 +116,25 @@ const Onboarding = () => {
             <div className="ml-4 text-left">
               <h3 className="text-lg font-semibold text-gray-900">Ik ben een Eigenaar</h3>
               <p className="text-gray-600">Ik heb paarden die ik wil delen</p>
+            </div>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleUserTypeSelect('both')}
+            disabled={isSubmitting}
+            className="w-full flex items-center p-6 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 disabled:opacity-50"
+          >
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <UserIcon className="w-6 h-6 text-purple-600" />
+                <HomeIcon className="w-6 h-6 text-purple-600 ml-2" />
+              </div>
+            </div>
+            <div className="ml-4 text-left">
+              <h3 className="text-lg font-semibold text-gray-900">Ik ben Beide</h3>
+              <p className="text-gray-600">Ik ben zowel ruiter als eigenaar</p>
             </div>
           </motion.button>
         </div>
