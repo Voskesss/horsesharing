@@ -1,26 +1,32 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { Heart, Users, Shield, Star } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import { HeartIcon, UsersIcon, ShieldCheckIcon, StarIcon, MagnifyingGlassIcon, HomeIcon } from '@heroicons/react/24/outline';
 
 const Home = () => {
+  const { isAuthenticated, isLoading, logout } = useKindeAuth();
+  const navigate = useNavigate();
+  
+  console.log('Home - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+  
   const features = [
     {
-      icon: Heart,
+      icon: HeartIcon,
       title: 'Veilig & Betrouwbaar',
       description: 'Alle gebruikers worden geverifieerd voor een veilige ervaring.',
     },
     {
-      icon: Users,
+      icon: UsersIcon,
       title: 'Perfecte Matches',
       description: 'Ons algoritme vindt de ideale match tussen rijders en eigenaren.',
     },
     {
-      icon: Shield,
+      icon: ShieldCheckIcon,
       title: 'Verzekerd',
       description: 'Volledige dekking tijdens alle rijtijden via onze partners.',
     },
     {
-      icon: Star,
+      icon: StarIcon,
       title: 'Beoordelingen',
       description: 'Transparante reviews helpen je de juiste keuze te maken.',
     },
@@ -54,12 +60,39 @@ const Home = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Link to="/horses" className="btn-primary text-lg px-8 py-3">
-                Vind Paarden
-              </Link>
-              <Link to="/login" className="btn-secondary text-lg px-8 py-3">
-                Word Lid
-              </Link>
+              {!isLoading && isAuthenticated ? (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={() => navigate('/discover')}
+                    className="flex-1 bg-primary-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-primary-700 transition-colors duration-200 flex items-center justify-center"
+                  >
+                    <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
+                    Ontdek Paarden
+                  </button>
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="flex-1 bg-white text-primary-600 border-2 border-primary-600 px-8 py-4 rounded-lg font-semibold hover:bg-primary-50 transition-colors duration-200 flex items-center justify-center"
+                  >
+                    <HomeIcon className="w-5 h-5 mr-2" />
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => logout()}
+                    className="flex-1 bg-red-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-red-700 transition-colors duration-200 flex items-center justify-center"
+                  >
+                    Uitloggen
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Link to="/login" className="inline-block bg-blue-600 text-white font-semibold text-lg px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                    Vind Paarden
+                  </Link>
+                  <Link to="/login" className="inline-block bg-white text-blue-600 border-2 border-blue-600 font-semibold text-lg px-8 py-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                    Word Lid
+                  </Link>
+                </>
+              )}
             </motion.div>
           </div>
         </div>

@@ -112,7 +112,7 @@ const Discover: React.FC = () => {
               alt={currentMatch.horse.name}
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-4 right-4 bg-primary text-white px-3 py-1 rounded-full text-sm font-semibold">
+            <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
               {currentMatch.score}% match
             </div>
           </div>
@@ -129,7 +129,7 @@ const Discover: React.FC = () => {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-2xl font-bold text-blue-600">
                   €{currentMatch.listing.price}
                 </p>
                 <p className="text-sm text-gray-500">per sessie</p>
@@ -161,7 +161,7 @@ const Discover: React.FC = () => {
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => handleSwipe('like')}
-            className="w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg"
+            className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center shadow-lg"
           >
             <HeartIcon className="w-8 h-8 text-white" />
           </motion.button>
@@ -174,7 +174,7 @@ const Discover: React.FC = () => {
               <div
                 key={index}
                 className={`w-2 h-2 rounded-full ${
-                  index <= currentIndex ? 'bg-primary' : 'bg-gray-300'
+                  index <= currentIndex ? 'bg-blue-600' : 'bg-gray-300'
                 }`}
               />
             ))}

@@ -1,13 +1,17 @@
-import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
+import React from 'react';
 import { motion } from 'framer-motion';
+import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { Navigate } from 'react-router-dom';
-import { ArrowRightIcon, UserPlusIcon } from '@heroicons/react/24/outline';
+import { HeartIcon, SparklesIcon, ArrowRightIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 
 const Login = () => {
-  const { login, register, isAuthenticated } = useKindeAuth();
+  const { login, register, isAuthenticated, isLoading, error } = useKindeAuth();
+  
+  console.log('Login - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading, 'error:', error);
+  console.log('Login functions:', { login: typeof login, register: typeof register });
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/onboarding" replace />;
   }
 
   return (
@@ -33,8 +37,14 @@ const Login = () => {
 
         <div className="bg-white rounded-xl shadow-sm p-8 space-y-6">
           <button
-            onClick={() => login({})}
-            className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-primary hover:bg-primary/90 transition-colors duration-200"
+            onClick={() => {
+              console.log('Login button clicked, calling login()');
+              console.log('Current URL:', window.location.href);
+              console.log('About to call login function...');
+              const result = login({});
+              console.log('Login function result:', result);
+            }}
+            className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
           >
             <ArrowRightIcon className="w-5 h-5 mr-2" />
             Inloggen
@@ -51,7 +61,7 @@ const Login = () => {
 
           <button
             onClick={() => register({})}
-            className="w-full flex items-center justify-center px-4 py-3 border border-primary text-base font-medium rounded-lg text-primary bg-white hover:bg-gray-50 transition-colors duration-200"
+            className="w-full flex items-center justify-center px-4 py-3 border border-blue-600 text-base font-medium rounded-lg text-blue-600 bg-white hover:bg-gray-50 transition-colors duration-200"
           >
             <UserPlusIcon className="w-5 h-5 mr-2" />
             Account Aanmaken

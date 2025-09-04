@@ -1,15 +1,16 @@
 import { motion } from 'framer-motion';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
-import { Calendar, Heart, MessageCircle, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CalendarIcon, HeartIcon, ChatBubbleLeftIcon, CogIcon } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
   const { user } = useKindeAuth();
 
   const stats = [
-    { name: 'Actieve Matches', value: '3', icon: Heart },
-    { name: 'Geplande Ritten', value: '8', icon: Calendar },
-    { name: 'Berichten', value: '12', icon: MessageCircle },
-    { name: 'Profiel Views', value: '24', icon: Settings },
+    { name: 'Actieve Matches', value: '3', icon: HeartIcon },
+    { name: 'Geplande Ritten', value: '8', icon: CalendarIcon },
+    { name: 'Berichten', value: '12', icon: ChatBubbleLeftIcon },
+    { name: 'Profiel Views', value: '24', icon: CogIcon },
   ];
 
   return (
@@ -40,8 +41,8 @@ const Dashboard = () => {
             >
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <stat.icon className="w-5 h-5 text-primary-500" />
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <stat.icon className="w-5 h-5 text-blue-600" />
                   </div>
                 </div>
                 <div className="ml-4">
@@ -68,7 +69,7 @@ const Dashboard = () => {
             <div className="space-y-4">
               {[1, 2, 3].map((item) => (
                 <div key={item} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold">🐎</span>
                   </div>
                   <div className="flex-1">
@@ -93,15 +94,15 @@ const Dashboard = () => {
               Snelle Acties
             </h2>
             <div className="space-y-3">
-              <button className="w-full btn-primary text-left">
+              <Link to="/discover" className="w-full bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 block text-center">
                 Zoek Paarden
-              </button>
-              <button className="w-full btn-secondary text-left">
-                Plan een Rit
-              </button>
-              <button className="w-full btn-secondary text-left">
+              </Link>
+              <Link to="/horses" className="w-full bg-white text-blue-600 border-2 border-blue-600 font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-200 block text-center">
+                Mijn Paarden
+              </Link>
+              <Link to="/messages" className="w-full bg-white text-blue-600 border-2 border-blue-600 font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-200 block text-center">
                 Berichten
-              </button>
+              </Link>
             </div>
           </motion.div>
         </div>

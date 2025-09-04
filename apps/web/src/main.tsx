@@ -1,4 +1,3 @@
-import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { KindeProvider } from '@kinde-oss/kinde-auth-react';
@@ -16,21 +15,30 @@ const queryClient = new QueryClient({
   },
 });
 
+// Clear all Kinde localStorage data to fix token errors
+Object.keys(localStorage).forEach(key => {
+  if (key.startsWith('kinde') || key.startsWith('@kinde')) {
+    localStorage.removeItem(key);
+  }
+});
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <KindeProvider
-      clientId={import.meta.env.VITE_KINDE_CLIENT_ID}
-      domain={import.meta.env.VITE_KINDE_DOMAIN}
-      redirectUri={import.meta.env.VITE_KINDE_REDIRECT_URI}
-      logoutUri={import.meta.env.VITE_KINDE_LOGOUT_URI}
-      audience=""
-      scope=""
-    >
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </KindeProvider>
-  </React.StrictMode>
+  <KindeProvider
+    clientId="d80a119a2a8a453a899f05af988a592b"
+    domain="https://horsesharing.kinde.com"
+    redirectUri="http://localhost:3000/callback"
+    logoutUri="http://localhost:3000"
+    audience=""
+    scope="openid profile email offline"
+    isDangerouslyUseLocalStorage={false}
+    onRedirectCallback={() => {
+      console.log('Kinde redirect callback triggered');
+    }}
+  >
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </QueryClientProvider>
+  </KindeProvider>
 );

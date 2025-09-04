@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     # Azure Storage
     AZURE_STORAGE_CONNECTION_STRING: str = ""
     AZURE_STORAGE_CONTAINER: str = "horsesharing"
+    AZURE_CONTAINER_NAME: str = ""
     
     # Email
     SMTP_HOST: str = ""
