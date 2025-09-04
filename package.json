@@ -1,0 +1,46 @@
+{
+  "name": "horsesharing",
+  "version": "1.0.0",
+  "description": "Matchingplatform voor bijrijders en paard/pony-eigenaren",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:api": "cd apps/api && uvicorn main:app --reload --port 8000",
+    "build": "npm run build:web && npm run build:api",
+    "build:web": "cd apps/web && npm run build",
+    "build:api": "cd apps/api && echo 'API build complete'",
+    "test": "npm run test:web && npm run test:api",
+    "test:web": "cd apps/web && npm run test",
+    "test:api": "cd apps/api && pytest",
+    "lint": "npm run lint:web && npm run lint:api",
+    "lint:web": "cd apps/web && npm run lint",
+    "lint:api": "cd apps/api && flake8 .",
+    "format": "prettier --write .",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,md}": [
+      "prettier --write"
+    ],
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
