@@ -21,27 +21,39 @@ const Dashboard = () => {
         const token = await kindeAuth.getToken();
         if (token && token !== 'placeholder-token') {
           const profile = await api.getUserProfile(token);
+          console.log('Dashboard - Full profile data:', profile);
           setUserProfile(profile);
           
           if (profile) {
             let percentage = 0;
             
             if (profile.role === 'rider') {
-              if (profile.rider_profile) {
-                const result = calculateRiderProfileProgress(profile.rider_profile);
-                percentage = result.percentage;
+              // Get rider profile separately since user API doesn't include it
+              try {
+                const riderProfile = await api.getRiderProfile(token);
+                if (riderProfile) {
+                  console.log('Dashboard - Rider profile data:', riderProfile);
+                  const result = calculateRiderProfileProgress(riderProfile);
+                  console.log('Dashboard - Progress result:', result);
+                  percentage = result.requiredPercentage;
+                } else {
+                  console.log('Dashboard - No rider profile found');
+                }
+              } catch (error) {
+                console.log('Dashboard - Error getting rider profile:', error);
               }
             } else if (profile.role === 'owner') {
               if (profile.owner_profile) {
                 const result = calculateOwnerProfileProgress(profile.owner_profile);
-                percentage = result.percentage;
+                percentage = result.requiredPercentage;
               }
             } else if (profile.role === 'both') {
-              const riderResult = profile.rider_profile ? calculateRiderProfileProgress(profile.rider_profile) : { percentage: 0 };
-              const ownerResult = profile.owner_profile ? calculateOwnerProfileProgress(profile.owner_profile) : { percentage: 0 };
-              percentage = Math.max(riderResult.percentage, ownerResult.percentage);
+              const riderResult = profile.rider_profile ? calculateRiderProfileProgress(profile.rider_profile) : { requiredPercentage: 0 };
+              const ownerResult = profile.owner_profile ? calculateOwnerProfileProgress(profile.owner_profile) : { requiredPercentage: 0 };
+              percentage = Math.max(riderResult.requiredPercentage, ownerResult.requiredPercentage);
             }
             
+            console.log('Dashboard - Final percentage:', percentage);
             setProfilePercentage(percentage);
             setProfileComplete(percentage >= 100);
           }
