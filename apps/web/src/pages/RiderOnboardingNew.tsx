@@ -4,6 +4,7 @@ import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { UserIcon, ClockIcon, CurrencyEuroIcon, AcademicCapIcon, HeartIcon, WrenchScrewdriverIcon, ShieldCheckIcon, CameraIcon } from '@heroicons/react/24/outline';
 import { api } from '../utils/api';
+import { calculateRiderProfileProgress } from '../utils/profileProgress';
 
 const RiderOnboardingNew = () => {
   const kindeAuth = useKindeAuth();
@@ -150,96 +151,29 @@ const RiderOnboardingNew = () => {
     }
   };
 
-  // Progress calculation based on answered questions
+  // Progress calculation using central function
   const calculateProgress = () => {
-    let totalRequired = 0;
-    let answeredRequired = 0;
-    let totalOptional = 0;
-    let answeredOptional = 0;
+    // Combine all current form data into a profile object
+    const currentProfile = {
+      ...basicInfo,
+      ...availability,
+      ...budget,
+      ...experience,
+      ...goals,
+      ...tasks,
+      ...preferences,
+      photos: media.photos,
+      video_intro_url: media.video_intro_url
+    };
     
-
-    // VERPLICHTE VELDEN (bepalen progress percentage)
+    const result = calculateRiderProfileProgress(currentProfile);
     
-    // Step 1: Basic info (7 verplichte vragen)
-    totalRequired += 7;
-    if (basicInfo.first_name) answeredRequired++;
-    if (basicInfo.last_name) answeredRequired++;
-    if (basicInfo.phone) answeredRequired++;
-    if (basicInfo.date_of_birth) answeredRequired++;
-    if (basicInfo.postcode) answeredRequired++;
-    if (basicInfo.max_travel_distance_km > 0) answeredRequired++;
-    if (basicInfo.transport_options.length > 0) answeredRequired++;
-
-    // Step 2: Availability (4 verplichte vragen)
-    totalRequired += 4;
-    if (availability.available_days.length > 0) answeredRequired++;
-    if (availability.available_time_blocks.length > 0) answeredRequired++;
-    if (availability.session_duration_min > 0) answeredRequired++;
-    if (availability.session_duration_max > 0) answeredRequired++;
-
-    // Step 3: Budget (2 verplichte vragen)
-    totalRequired += 2;
-    if (budget.budget_min_euro > 0) answeredRequired++;
-    if (budget.budget_max_euro > 0) answeredRequired++;
-
-    // Step 4: Experience (2 verplichte vragen)
-    totalRequired += 2;
-    if (experience.experience_years >= 0) answeredRequired++;
-    if (experience.certification_level) answeredRequired++;
-
-    // Step 5: Goals (3 verplichte vragen)
-    totalRequired += 3;
-    if (goals.riding_goals.length > 0) answeredRequired++;
-    if (goals.discipline_preferences.length > 0) answeredRequired++;
-    if (goals.personality_style.length > 0) {
-      answeredRequired++;
-    }
-
-    // Step 6: Tasks (1 verplichte vraag)
-    totalRequired += 1;
-    if (tasks.willing_tasks.length > 0) answeredRequired++;
-
-    // OPTIONELE VELDEN (verbeteren matching kwaliteit)
-    
-    // Experience optioneel
-    totalOptional += 2;
-    if (Object.keys(experience.comfort_levels).some(key => experience.comfort_levels[key as keyof typeof experience.comfort_levels])) {
-      answeredOptional++;
-    }
-    if (experience.previous_instructors.length > 0) {
-      answeredOptional++;
-    }
-
-    // Goals optioneel - personality_style nu verplicht, dus verwijderd uit optioneel
-
-    // Health & Preferences - alleen insurance telt mee voor matching quality
-    totalOptional += 1;
-    if (preferences.insurance_coverage === true || preferences.insurance_coverage === false) {
-      answeredOptional++;
-    }
-    // Health restrictions en no-gos tellen NIET mee voor matching quality
-
-    // Media (volledig optioneel)
-    totalOptional += 2;
-    if (media.photos.length > 0) {
-      answeredOptional++;
-    }
-    if (media.video_intro_url) {
-      answeredOptional++;
-    }
-
-    const requiredPercentage = Math.round((answeredRequired / totalRequired) * 100);
-    
-    const matchingQuality = Math.round(((answeredRequired + answeredOptional) / (totalRequired + totalOptional)) * 100 * 10) / 10;
-    
-
     return {
-      totalQuestions: totalRequired,
-      answeredQuestions: answeredRequired,
-      percentage: requiredPercentage,
-      matchingQuality,
-      optionalCompleted: answeredOptional,
-      totalOptional
+      totalQuestions: result.requiredTotal, // Dynamic required fields count
+      answeredQuestions: result.requiredAnswered,
+      percentage: result.requiredPercentage,
+      totalPercentage: result.percentage,
+      matchingQuality: result.percentage
     };
   };
 
@@ -545,7 +479,7 @@ const RiderOnboardingNew = () => {
                   </div>
                   <div className="text-xs text-gray-400">
                     Matching kwaliteit: {progress.matchingQuality}% 
-                    <span className="ml-1">({progress.optionalCompleted}/{progress.totalOptional} optioneel)</span>
+                    <span className="ml-1">({progress.answeredQuestions}/{progress.totalQuestions} vragen)</span>
                   </div>
                 </div>
                 {isSaving && (

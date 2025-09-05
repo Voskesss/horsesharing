@@ -4,12 +4,14 @@ import { Link } from 'react-router-dom';
 import { CalendarIcon, HeartIcon, ChatBubbleLeftIcon, CogIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import { calculateRiderProfileProgress, calculateOwnerProfileProgress } from '../utils/profileProgress';
 
 const Dashboard = () => {
   const kindeAuth = useKindeAuth();
   const { user } = kindeAuth;
   const [userProfile, setUserProfile] = useState<any>(null);
   const [profileComplete, setProfileComplete] = useState(true);
+  const [profilePercentage, setProfilePercentage] = useState(100);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,19 +24,26 @@ const Dashboard = () => {
           setUserProfile(profile);
           
           if (profile) {
-            let complete = false;
+            let percentage = 0;
             
             if (profile.role === 'rider') {
-              complete = profile.rider_profile && Object.keys(profile.rider_profile).length > 0;
+              if (profile.rider_profile) {
+                const result = calculateRiderProfileProgress(profile.rider_profile);
+                percentage = result.percentage;
+              }
             } else if (profile.role === 'owner') {
-              complete = profile.owner_profile && Object.keys(profile.owner_profile).length > 0;
+              if (profile.owner_profile) {
+                const result = calculateOwnerProfileProgress(profile.owner_profile);
+                percentage = result.percentage;
+              }
             } else if (profile.role === 'both') {
-              const hasRiderProfile = profile.rider_profile && Object.keys(profile.rider_profile).length > 0;
-              const hasOwnerProfile = profile.owner_profile && Object.keys(profile.owner_profile).length > 0;
-              complete = hasRiderProfile || hasOwnerProfile;
+              const riderResult = profile.rider_profile ? calculateRiderProfileProgress(profile.rider_profile) : { percentage: 0 };
+              const ownerResult = profile.owner_profile ? calculateOwnerProfileProgress(profile.owner_profile) : { percentage: 0 };
+              percentage = Math.max(riderResult.percentage, ownerResult.percentage);
             }
             
-            setProfileComplete(complete);
+            setProfilePercentage(percentage);
+            setProfileComplete(percentage >= 100);
           }
         }
       } catch (error) {
@@ -81,7 +90,7 @@ const Dashboard = () => {
               <ExclamationTriangleIcon className="w-6 h-6 text-yellow-600 mr-3" />
               <div className="flex-1">
                 <h3 className="text-sm font-medium text-yellow-800">
-                  Profiel Incompleet
+                  Profiel {profilePercentage}% compleet
                 </h3>
                 <p className="text-sm text-yellow-700 mt-1">
                   Vul je profiel aan om matches te kunnen maken en alle functies te gebruiken.
