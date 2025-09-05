@@ -319,15 +319,16 @@ const RiderOnboardingNew = () => {
   }, [isAuthenticated, user, isSaving, kindeAuth, basicInfo, availability, budget, experience, goals, tasks, preferences, media]);
 
   // Auto-save elke 30 seconden als er wijzigingen zijn
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (progress.answeredQuestions > 0) {
-        saveProgress();
-      }
-    }, 30000); // 30 seconden
+  // DISABLED: Dit overschrijft data van andere pagina's
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (progress.answeredQuestions > 0) {
+  //       saveProgress();
+  //     }
+  //   }, 30000); // 30 seconden
 
-    return () => clearInterval(interval);
-  }, [progress.answeredQuestions, saveProgress]);
+  //   return () => clearInterval(interval);
+  // }, [progress.answeredQuestions, saveProgress]);
 
   const transportOptions = ['auto', 'openbaar_vervoer', 'fiets', 'te_voet'];
   const weekDays = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag'];

@@ -97,9 +97,14 @@ const Profile = () => {
         await api.updateOwnerProfile(token, editData);
       }
 
-      // Reload profile data
-      const updatedProfile = await api.getUserProfile(token);
-      setUserProfile(updatedProfile);
+      // Reload profile data - get the specific profile type, not just basic user data
+      if (userProfile.role === 'rider') {
+        const updatedRiderProfile = await api.getRiderProfile(token);
+        setEditData(updatedRiderProfile);
+      } else if (userProfile.role === 'owner') {
+        const updatedOwnerProfile = await api.getOwnerProfile(token);
+        setEditData(updatedOwnerProfile);
+      }
       setIsEditing(false);
     } catch (err) {
       console.error('Error saving profile:', err);

@@ -119,7 +119,29 @@ async def get_current_user(
         # Auto-create user from Kinde token on first login
         try:
             # Get user info from Kinde token
-            email = payload.get("email", f"{user_sub}@temp.com")  # Fallback email
+            email = payload.get("email")
+            
+            # If no email in token, try to get it from Kinde UserInfo API
+            if not email:
+                try:
+                    import httpx
+                    userinfo_response = httpx.get(
+                        f"https://{settings.KINDE_DOMAIN}/oauth2/user_profile",
+                        headers={"Authorization": f"Bearer {token}"}
+                    )
+                    if userinfo_response.status_code == 200:
+                        userinfo = userinfo_response.json()
+                        email = userinfo.get("email")
+                        print(f"DEBUG: Got email from UserInfo API: {email}")
+                except Exception as e:
+                    print(f"DEBUG: Failed to get email from UserInfo API: {e}")
+            
+            # Final fallback to temp email
+            if not email:
+                email = f"{user_sub}@temp.com"
+                print(f"DEBUG: Using fallback email: {email}")
+            else:
+                print(f"DEBUG: Using email from token/API: {email}")
             
             # Create new user with default role
             user = User(
