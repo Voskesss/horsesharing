@@ -117,6 +117,62 @@ const Profile = () => {
     setIsEditing(false);
   };
 
+  // Photo upload handler
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const uploadedPhotos = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      // Create a data URL for preview (in production, upload to cloud storage)
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          uploadedPhotos.push(event.target.result as string);
+          if (uploadedPhotos.length === files.length) {
+            setEditData({
+              ...editData,
+              photos: [...(editData.photos || []), ...uploadedPhotos]
+            });
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove photo handler
+  const removePhoto = (index: number) => {
+    const updatedPhotos = [...(editData.photos || [])];
+    updatedPhotos.splice(index, 1);
+    setEditData({...editData, photos: updatedPhotos});
+  };
+
+  // Video upload handler
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Create a data URL for preview (in production, upload to cloud storage)
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setEditData({
+          ...editData,
+          video_intro_url: event.target.result as string
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // YouTube URL converter
+  const getYouTubeEmbedUrl = (url: string) => {
+    const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+    return videoId ? `https://www.youtube.com/embed/${videoId[1]}` : url;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -753,35 +809,6 @@ const Profile = () => {
                     </div>
                   </div>
                   
-                  {/* Taak Frequentie */}
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Taak frequentie</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {['uitrijden', 'voeren', 'poetsen', 'stalwerk'].map(task => (
-                        <div key={task} className="flex items-center space-x-2">
-                          <span className="text-sm w-20">{task}:</span>
-                          <select
-                            value={editData.task_frequency?.[task] || ''}
-                            onChange={(e) => setEditData({
-                              ...editData,
-                              task_frequency: {
-                                ...editData.task_frequency,
-                                [task]: e.target.value
-                              }
-                            })}
-                            className="flex-1 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                            disabled={!isEditing}
-                          >
-                            <option value="">-</option>
-                            <option value="daily">Dagelijks</option>
-                            <option value="weekly">Wekelijks</option>
-                            <option value="monthly">Maandelijks</option>
-                            <option value="never">Nooit</option>
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 {/* Gezondheid & No-gos */}
@@ -856,29 +883,118 @@ const Profile = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Media</h3>
                   
                   {/* Foto's */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Foto URLs</label>
-                    <textarea
-                      value={(editData.photos || []).join('\n')}
-                      onChange={(e) => setEditData({...editData, photos: e.target.value.split('\n').filter(line => line.trim())})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      readOnly={!isEditing}
-                      rows={3}
-                      placeholder="Elke foto URL op een nieuwe regel..."
-                    />
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Foto's</label>
+                    
+                    {/* Upload knop */}
+                    {isEditing && (
+                      <div className="mb-4">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                          id="photo-upload"
+                        />
+                        <label
+                          htmlFor="photo-upload"
+                          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          Foto's toevoegen
+                        </label>
+                      </div>
+                    )}
+                    
+                    {/* Foto preview grid */}
+                    {editData.photos && editData.photos.length > 0 && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                        {editData.photos.map((photo: string, index: number) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={photo}
+                              alt={`Foto ${index + 1}`}
+                              className="w-full h-32 object-cover rounded-lg border"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiAxNkM4LjY4NjI5IDE2IDYgMTMuMzEzNyA2IDEwQzYgNi42ODYyOSA4LjY4NjI5IDQgMTIgNEMxNS4zMTM3IDQgMTggNi42ODYyOSAxOCAxMEMxOCAxMy4zMTM3IDE1LjMxMzcgMTYgMTIgMTZaIiBzdHJva2U9IiM5Q0E0QUYiIHN0cm9rZS13aWR0aD0iMiIvPgo8cGF0aCBkPSJNMTIgMTJDMTMuMTA0NiAxMiAxNCAxMS4xMDQ2IDE0IDEwQzE0IDguODk1NDMgMTMuMTA0NiA4IDEyIDhDMTAuODk1NCA4IDEwIDguODk1NDMgMTAgMTBDMTAgMTEuMTA0NiAxMC44OTU0IDEyIDEyIDEyWiIgZmlsbD0iIzlDQTRBRiIvPgo8L3N2Zz4K';
+                              }}
+                            />
+                            {isEditing && (
+                              <button
+                                onClick={() => removePhoto(index)}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   
                   {/* Video Intro */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Video Introductie URL</label>
-                    <input
-                      type="url"
-                      value={editData.video_intro_url || ''}
-                      onChange={(e) => setEditData({...editData, video_intro_url: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      readOnly={!isEditing}
-                      placeholder="https://..."
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Video Introductie</label>
+                    
+                    {/* Video upload/URL input */}
+                    <div className="space-y-3">
+                      {isEditing && (
+                        <div className="flex space-x-2">
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={handleVideoUpload}
+                            className="hidden"
+                            id="video-upload"
+                          />
+                          <label
+                            htmlFor="video-upload"
+                            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                          >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Video uploaden
+                          </label>
+                          <span className="text-gray-500 self-center">of</span>
+                        </div>
+                      )}
+                      
+                      <input
+                        type="url"
+                        value={editData.video_intro_url || ''}
+                        onChange={(e) => setEditData({...editData, video_intro_url: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        readOnly={!isEditing}
+                        placeholder="YouTube URL of andere video link..."
+                      />
+                      
+                      {/* Video preview */}
+                      {editData.video_intro_url && (
+                        <div className="mt-3">
+                          {editData.video_intro_url.includes('youtube.com') || editData.video_intro_url.includes('youtu.be') ? (
+                            <div className="aspect-video">
+                              <iframe
+                                src={getYouTubeEmbedUrl(editData.video_intro_url)}
+                                className="w-full h-full rounded-lg"
+                                frameBorder="0"
+                                allowFullScreen
+                              />
+                            </div>
+                          ) : (
+                            <video
+                              src={editData.video_intro_url}
+                              controls
+                              className="w-full max-h-64 rounded-lg"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </>

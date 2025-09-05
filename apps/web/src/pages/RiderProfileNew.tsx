@@ -14,6 +14,67 @@ const RiderProfile = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 8;
 
+  // Progress calculation based on answered questions
+  const calculateProgress = () => {
+    let totalQuestions = 0;
+    let answeredQuestions = 0;
+
+    // Step 1: Basic info (7 questions)
+    totalQuestions += 7;
+    if (basicInfo.first_name) answeredQuestions++;
+    if (basicInfo.last_name) answeredQuestions++;
+    if (basicInfo.phone) answeredQuestions++;
+    if (basicInfo.date_of_birth) answeredQuestions++;
+    if (basicInfo.postcode) answeredQuestions++;
+    if (basicInfo.max_travel_distance_km > 0) answeredQuestions++;
+    if (basicInfo.transport_options.length > 0) answeredQuestions++;
+
+    // Step 2: Availability (5 questions)
+    totalQuestions += 5;
+    if (availability.available_days.length > 0) answeredQuestions++;
+    if (availability.available_time_blocks.length > 0) answeredQuestions++;
+    if (availability.session_duration_min > 0) answeredQuestions++;
+    if (availability.session_duration_max > 0) answeredQuestions++;
+    if (availability.arrangement_duration) answeredQuestions++;
+
+    // Step 3: Budget (2 questions)
+    totalQuestions += 2;
+    if (budget.budget_min_euro > 0) answeredQuestions++;
+    if (budget.budget_max_euro > 0) answeredQuestions++;
+
+    // Step 4: Experience (3 questions)
+    totalQuestions += 3;
+    if (experience.experience_years >= 0) answeredQuestions++;
+    if (experience.certification_level) answeredQuestions++;
+    if (Object.keys(experience.comfort_levels).some(key => experience.comfort_levels[key as keyof typeof experience.comfort_levels])) answeredQuestions++;
+
+    // Step 5: Goals (2 questions)
+    totalQuestions += 2;
+    if (goals.riding_goals.length > 0) answeredQuestions++;
+    if (goals.discipline_preferences.length > 0) answeredQuestions++;
+
+    // Step 6: Tasks (1 question)
+    totalQuestions += 1;
+    if (tasks.willing_tasks.length > 0) answeredQuestions++;
+
+    // Step 7: Health & Insurance (2 questions)
+    totalQuestions += 2;
+    if (preferences.health_restrictions.length > 0 || preferences.insurance_coverage) answeredQuestions++;
+    if (preferences.insurance_coverage !== undefined) answeredQuestions++;
+
+    // Step 8: Media (1 question - optional)
+    totalQuestions += 1;
+    if (media.video_intro_url) answeredQuestions++;
+
+    return {
+      totalQuestions,
+      answeredQuestions,
+      percentage: Math.round((answeredQuestions / totalQuestions) * 100)
+    };
+  };
+
+  const progress = calculateProgress();
+
   // Step 1: Basis informatie (exact zoals onboarding)
   const [basicInfo, setBasicInfo] = useState({
     first_name: user?.given_name || '',
@@ -308,12 +369,14 @@ const RiderProfile = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-blue-600">Stap {currentStep} van {totalSteps}</span>
-              <span className="text-sm text-gray-500">{Math.round((currentStep / totalSteps) * 100)}% voltooid</span>
+              <span className="text-sm text-gray-500">
+                {progress.answeredQuestions} van {progress.totalQuestions} vragen beantwoord ({progress.percentage}%)
+              </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                style={{ width: `${progress.percentage}%` }}
               ></div>
             </div>
           </div>
