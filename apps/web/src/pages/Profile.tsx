@@ -633,7 +633,7 @@ const Profile = () => {
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Persoonlijkheidsstijl</label>
                     <div className="space-y-2">
-                      {['geduldig', 'consistent', 'speels', 'competitief', 'rustig', 'energiek'].map(style => (
+                      {['rustig', 'energiek', 'geduldig', 'assertief', 'flexibel', 'gestructureerd'].map(style => (
                         <label key={style} className="flex items-center">
                           <input
                             type="checkbox"
