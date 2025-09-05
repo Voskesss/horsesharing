@@ -154,7 +154,7 @@ const RiderOnboardingNew = () => {
     let totalQuestions = 0;
     let answeredQuestions = 0;
 
-    // Step 1: Basic info (7 questions)
+    // Step 1: Basic info (7 verplichte vragen)
     totalQuestions += 7;
     if (basicInfo.first_name) answeredQuestions++;
     if (basicInfo.last_name) answeredQuestions++;
@@ -164,43 +164,39 @@ const RiderOnboardingNew = () => {
     if (basicInfo.max_travel_distance_km > 0) answeredQuestions++;
     if (basicInfo.transport_options.length > 0) answeredQuestions++;
 
-    // Step 2: Availability (5 questions)
-    totalQuestions += 5;
+    // Step 2: Availability (4 verplichte vragen)
+    totalQuestions += 4;
     if (availability.available_days.length > 0) answeredQuestions++;
     if (availability.available_time_blocks.length > 0) answeredQuestions++;
     if (availability.session_duration_min > 0) answeredQuestions++;
     if (availability.session_duration_max > 0) answeredQuestions++;
-    if (availability.arrangement_duration) answeredQuestions++;
 
-    // Step 3: Budget (2 questions)
+    // Step 3: Budget (2 verplichte vragen)
     totalQuestions += 2;
     if (budget.budget_min_euro > 0) answeredQuestions++;
     if (budget.budget_max_euro > 0) answeredQuestions++;
 
-    // Step 4: Experience (3 questions)
+    // Step 4: Experience (3 verplichte vragen - previous_instructors is optioneel)
     totalQuestions += 3;
     if (experience.experience_years >= 0) answeredQuestions++;
     if (experience.certification_level) answeredQuestions++;
     if (Object.keys(experience.comfort_levels).some(key => experience.comfort_levels[key as keyof typeof experience.comfort_levels])) answeredQuestions++;
 
-    // Step 5: Goals (3 questions)
+    // Step 5: Goals (3 verplichte vragen)
     totalQuestions += 3;
     if (goals.riding_goals.length > 0) answeredQuestions++;
     if (goals.discipline_preferences.length > 0) answeredQuestions++;
     if (goals.personality_style.length > 0) answeredQuestions++;
 
-    // Step 6: Tasks (1 question)
+    // Step 6: Tasks (1 verplichte vraag)
     totalQuestions += 1;
     if (tasks.willing_tasks.length > 0) answeredQuestions++;
 
-    // Step 7: Health & Insurance (2 questions)
-    totalQuestions += 2;
-    if (preferences.health_restrictions.length > 0 || preferences.insurance_coverage) answeredQuestions++;
+    // Step 7: Insurance (1 verplichte vraag - health_restrictions en no_gos zijn optioneel)
+    totalQuestions += 1;
     if (preferences.insurance_coverage !== undefined) answeredQuestions++;
 
-    // Step 8: Media (1 question - optional)
-    totalQuestions += 1;
-    if (media.video_intro_url) answeredQuestions++;
+    // Step 8: Media - volledig optioneel, telt niet mee
 
     return {
       totalQuestions,
@@ -314,6 +310,7 @@ const RiderOnboardingNew = () => {
           // Fill media
           setMedia(prev => ({
             ...prev,
+            photos: existingProfile.photos || prev.photos,
             video_intro_url: existingProfile.video_intro_url || prev.video_intro_url
           }));
           } else {
@@ -661,6 +658,20 @@ const RiderOnboardingNew = () => {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vorige instructeurs (referenties)</label>
+                <textarea
+                  value={experience.previous_instructors.join('\n')}
+                  onChange={(e) => setExperience({
+                    ...experience,
+                    previous_instructors: e.target.value.split('\n').filter(line => line.trim())
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="Elke instructeur op een nieuwe regel..."
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Comfort levels</label>
                 <div className="space-y-3">
                   {Object.entries(experience.comfort_levels).map(([key, value]) => (
@@ -885,6 +896,37 @@ const RiderOnboardingNew = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Foto's (optioneel)</label>
+                
+                {/* Bestaande foto's tonen */}
+                {media.photos && media.photos.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Huidige foto's:</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {media.photos.map((photo: any, index: number) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={typeof photo === 'string' ? photo : URL.createObjectURL(photo)}
+                            alt={`Foto ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border"
+                            onError={(e) => {
+                              e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiAxNkM4LjY4NjI5IDE2IDYgMTMuMzEzNyA2IDEwQzYgNi42ODYyOSA4LjY4NjI5IDQgMTIgNEMxNS4zMTM3IDQgMTggNi42ODYyOSAxOCAxMEMxOCAxMy4zMTM3IDE1LjMxMzcgMTYgMTIgMTZaIiBzdHJva2U9IiM5Q0E0QUYiIHN0cm9rZS13aWR0aD0iMiIvPgo8cGF0aCBkPSJNMTIgMTJDMTMuMTA0NiAxMiAxNCAxMS4xMDQ2IDE0IDEwQzE0IDguODk1NDMgMTMuMTA0NiA4IDEyIDhDMTAuODk1NCA4IDEwIDguODk1NDMgMTAgMTBDMTAgMTEuMTA0NiAxMC44OTU0IDEyIDEyIDEyWiIgZmlsbD0iIzlDQTRBRiIvPgo8L3N2Zz4K';
+                            }}
+                          />
+                          <button
+                            onClick={() => {
+                              const newPhotos = media.photos.filter((_: any, i: number) => i !== index);
+                              setMedia({...media, photos: newPhotos});
+                            }}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                   <CameraIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 mb-2">Sleep foto's hierheen of</p>
@@ -904,14 +946,9 @@ const RiderOnboardingNew = () => {
                     htmlFor="photos"
                     className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition-colors"
                   >
-                    Selecteer foto's
+                    {media.photos.length > 0 ? 'Meer foto\'s toevoegen' : 'Selecteer foto\'s'}
                   </label>
                 </div>
-                {media.photos.length > 0 && (
-                  <div className="mt-2 text-sm text-gray-600">
-                    {media.photos.length} foto(s) geselecteerd
-                  </div>
-                )}
               </div>
             </motion.div>
           )}
