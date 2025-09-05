@@ -790,16 +790,21 @@ const RiderOnboardingNew = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Persoonlijkheid stijl</label>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    console.log('🧹 CLEARING ALL personality styles');
-                    setGoals({...goals, personality_style: []});
-                  }}
-                  className="mb-2 px-3 py-1 text-xs bg-red-100 text-red-700 rounded border border-red-300 hover:bg-red-200"
-                >
-                  Clear All (TEST)
-                </button>
+                <div className="mb-2 flex gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      console.log('🧹 CLEARING ALL personality styles');
+                      setGoals({...goals, personality_style: []});
+                    }}
+                    className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded border border-red-300 hover:bg-red-200"
+                  >
+                    Clear All
+                  </button>
+                  <span className="text-xs text-gray-500 self-center">
+                    Selected: {goals.personality_style.length}
+                  </span>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   {personalityStyles.map(style => (
                     <button
