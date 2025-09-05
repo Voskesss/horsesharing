@@ -11,11 +11,10 @@ import Dashboard from './pages/Dashboard';
 import Discover from './pages/Discover';
 import Matches from './pages/Matches';
 import Messages from './pages/Messages';
-import Profile from './pages/Profile';
 import Horses from './pages/Horses';
 import Callback from './pages/Callback';
 import ProfileChoice from './pages/ProfileChoice';
-import RiderProfile from './pages/RiderProfile';
+import Profile from './pages/Profile';
 import RiderOnboardingNew from './pages/RiderOnboardingNew';
 import OwnerProfile from './pages/OwnerProfile';
 
@@ -71,7 +70,7 @@ function App() {
           } />
           <Route path="/profile/rider" element={
             <ProtectedRoute>
-              <RiderProfile />
+              <RiderOnboardingNew />
             </ProtectedRoute>
           } />
           <Route path="/profile/rider-new" element={

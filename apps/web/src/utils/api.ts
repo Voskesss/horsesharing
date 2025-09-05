@@ -162,7 +162,7 @@ export const api = {
     console.log('Updating rider profile with user token');
     
     const response = await fetch(`${API_BASE_URL}/api/v1/profiles/rider/`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${userToken}`,
         'Content-Type': 'application/json',

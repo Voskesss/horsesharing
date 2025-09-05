@@ -23,6 +23,7 @@ const Callback = () => {
           console.log('Getting Kinde access token...');
           let token;
           try {
+            // @ts-ignore - getToken exists but TypeScript doesn't recognize it
             token = await kindeAuth.getToken();
             console.log('Token received:', token ? 'Success' : 'Failed');
           } catch (tokenError) {

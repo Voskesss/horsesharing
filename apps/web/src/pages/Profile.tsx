@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { User, Edit, Camera, Save, X } from 'lucide-react';
 import { api } from '../utils/api';
-import RiderProfileView from '../components/RiderProfileView';
 
 interface UserProfile {
   id: number;
@@ -33,14 +32,33 @@ const Profile = () => {
           return;
         }
 
+        // First get basic user profile
         const profile = await api.getUserProfile(token);
         setUserProfile(profile);
         
-        // Initialize edit data with current profile
-        if (profile.role === 'rider' && profile.rider_profile) {
-          setEditData(profile.rider_profile);
-        } else if (profile.role === 'owner' && profile.owner_profile) {
-          setEditData(profile.owner_profile);
+        console.log('🔍 Basic profile loaded:', JSON.stringify(profile, null, 2));
+        
+        // Then get specific rider/owner profile data
+        if (profile.role === 'rider') {
+          try {
+            const riderProfile = await api.getRiderProfile(token);
+            console.log('✅ Rider profile loaded:', JSON.stringify(riderProfile, null, 2));
+            setEditData(riderProfile);
+          } catch (err) {
+            console.log('❌ No rider profile found, will create new one');
+            setEditData({});
+          }
+        } else if (profile.role === 'owner') {
+          try {
+            const ownerProfile = await api.getOwnerProfile(token);
+            console.log('✅ Owner profile loaded:', JSON.stringify(ownerProfile, null, 2));
+            setEditData(ownerProfile);
+          } catch (err) {
+            console.log('❌ No owner profile found, will create new one');
+            setEditData({});
+          }
+        } else {
+          setEditData({});
         }
         
         setError(null);
@@ -61,8 +79,20 @@ const Profile = () => {
       const token = await kindeAuth.getToken();
       if (!token || !userProfile) return;
 
+      console.log('💾 Saving profile data:', JSON.stringify(editData, null, 2));
+      
       if (userProfile.role === 'rider') {
-        await api.updateRiderProfile(token, editData);
+        // Try to create profile first if it doesn't exist
+        try {
+          await api.updateRiderProfile(token, editData);
+        } catch (updateError: any) {
+          if (updateError.message.includes('404')) {
+            console.log('Profile not found, creating new one...');
+            await api.createRiderProfile(token, editData);
+          } else {
+            throw updateError;
+          }
+        }
       } else if (userProfile.role === 'owner') {
         await api.updateOwnerProfile(token, editData);
       }
@@ -238,16 +268,448 @@ const Profile = () => {
                     readOnly={!isEditing}
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Geboortedatum
+                  </label>
+                  <input
+                    type="date"
+                    value={editData.date_of_birth || ''}
+                    onChange={(e) => setEditData({...editData, date_of_birth: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    readOnly={!isEditing}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max reisafstand (km)
+                  </label>
+                  <input
+                    type="number"
+                    value={editData.max_travel_distance_km || ''}
+                    onChange={(e) => setEditData({...editData, max_travel_distance_km: parseInt(e.target.value) || 0})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    readOnly={!isEditing}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Role-specific profile view */}
+            {/* Rider Profile Fields */}
             {userProfile?.role === 'rider' && (
-              <RiderProfileView 
-                profileData={editData}
-                isEditing={isEditing}
-                onDataChange={(field, value) => setEditData({...editData, [field]: value})}
-              />
+              <>
+                {/* Beschikbaarheid */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Beschikbaarheid</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Beschikbare dagen</label>
+                      <div className="space-y-2">
+                        {['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag'].map(day => (
+                          <label key={day} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={(editData.available_days || []).includes(day)}
+                              onChange={(e) => {
+                                const days = editData.available_days || [];
+                                if (e.target.checked) {
+                                  setEditData({...editData, available_days: [...days, day]});
+                                } else {
+                                  setEditData({...editData, available_days: days.filter((d: string) => d !== day)});
+                                }
+                              }}
+                              disabled={!isEditing}
+                              className="mr-2"
+                            />
+                            <span className="capitalize">{day}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tijdsblokken</label>
+                      <div className="space-y-2">
+                        {['ochtend', 'middag', 'avond'].map(time => (
+                          <label key={time} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={(editData.available_time_blocks || []).includes(time)}
+                              onChange={(e) => {
+                                const times = editData.available_time_blocks || [];
+                                if (e.target.checked) {
+                                  setEditData({...editData, available_time_blocks: [...times, time]});
+                                } else {
+                                  setEditData({...editData, available_time_blocks: times.filter((t: string) => t !== time)});
+                                }
+                              }}
+                              disabled={!isEditing}
+                              className="mr-2"
+                            />
+                            <span className="capitalize">{time}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Budget */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Budget</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Minimum budget (€/maand)</label>
+                      <input
+                        type="number"
+                        value={editData.budget_min_euro ? editData.budget_min_euro / 100 : ''}
+                        onChange={(e) => setEditData({...editData, budget_min_euro: parseInt(e.target.value) * 100 || 0})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        readOnly={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Maximum budget (€/maand)</label>
+                      <input
+                        type="number"
+                        value={editData.budget_max_euro ? editData.budget_max_euro / 100 : ''}
+                        onChange={(e) => setEditData({...editData, budget_max_euro: parseInt(e.target.value) * 100 || 0})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        readOnly={!isEditing}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Disciplines */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Disciplines & Doelen</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Discipline voorkeuren</label>
+                      <div className="space-y-2">
+                        {['dressuur', 'springen', 'eventing', 'western', 'buitenritten', 'natural_horsemanship'].map(discipline => (
+                          <label key={discipline} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={(editData.discipline_preferences || []).includes(discipline)}
+                              onChange={(e) => {
+                                const disciplines = editData.discipline_preferences || [];
+                                if (e.target.checked) {
+                                  setEditData({...editData, discipline_preferences: [...disciplines, discipline]});
+                                } else {
+                                  setEditData({...editData, discipline_preferences: disciplines.filter((d: string) => d !== discipline)});
+                                }
+                              }}
+                              disabled={!isEditing}
+                              className="mr-2"
+                            />
+                            <span className="capitalize">{discipline.replace('_', ' ')}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Rijdoelen</label>
+                      <div className="space-y-2">
+                        {['recreatie', 'training', 'wedstrijden', 'therapie', 'sociale_contacten'].map(goal => (
+                          <label key={goal} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={(editData.riding_goals || []).includes(goal)}
+                              onChange={(e) => {
+                                const goals = editData.riding_goals || [];
+                                if (e.target.checked) {
+                                  setEditData({...editData, riding_goals: [...goals, goal]});
+                                } else {
+                                  setEditData({...editData, riding_goals: goals.filter((g: string) => g !== goal)});
+                                }
+                              }}
+                              disabled={!isEditing}
+                              className="mr-2"
+                            />
+                            <span className="capitalize">{goal.replace('_', ' ')}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ervaring */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Ervaring</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Jaren ervaring</label>
+                      <input
+                        type="number"
+                        value={editData.experience_years || ''}
+                        onChange={(e) => setEditData({...editData, experience_years: parseInt(e.target.value) || 0})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        readOnly={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Certificeringsniveau</label>
+                      <select
+                        value={editData.certification_level || ''}
+                        onChange={(e) => setEditData({...editData, certification_level: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={!isEditing}
+                      >
+                        <option value="">Selecteer niveau</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="gevorderd_beginner">Gevorderd beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="gevorderd">Gevorderd</option>
+                        <option value="expert">Expert</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transport & Sessie Details */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Transport & Sessie Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Transport opties</label>
+                      <div className="space-y-2">
+                        {['auto', 'openbaar_vervoer', 'fiets', 'te_voet'].map(transport => (
+                          <label key={transport} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={(editData.transport_options || []).includes(transport)}
+                              onChange={(e) => {
+                                const options = editData.transport_options || [];
+                                if (e.target.checked) {
+                                  setEditData({...editData, transport_options: [...options, transport]});
+                                } else {
+                                  setEditData({...editData, transport_options: options.filter((t: string) => t !== transport)});
+                                }
+                              }}
+                              disabled={!isEditing}
+                              className="mr-2"
+                            />
+                            <span className="capitalize">{transport.replace('_', ' ')}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Sessie duur (min)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          placeholder="Min"
+                          value={editData.session_duration_min || ''}
+                          onChange={(e) => setEditData({...editData, session_duration_min: parseInt(e.target.value) || 60})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          readOnly={!isEditing}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Max"
+                          value={editData.session_duration_max || ''}
+                          onChange={(e) => setEditData({...editData, session_duration_max: parseInt(e.target.value) || 120})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          readOnly={!isEditing}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Comfort Levels */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Comfort Levels</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      {[
+                        { key: 'traffic', label: 'Verkeer' },
+                        { key: 'outdoor_solo', label: 'Alleen buitenrijden' },
+                        { key: 'nervous_horses', label: 'Nerveuze paarden' },
+                        { key: 'young_horses', label: 'Jonge paarden' }
+                      ].map(item => (
+                        <label key={item.key} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={editData.comfort_levels?.[item.key] || false}
+                            onChange={(e) => setEditData({
+                              ...editData, 
+                              comfort_levels: {
+                                ...editData.comfort_levels,
+                                [item.key]: e.target.checked
+                              }
+                            })}
+                            disabled={!isEditing}
+                            className="mr-2"
+                          />
+                          <span>{item.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Springen hoogte (cm)</label>
+                      <input
+                        type="number"
+                        value={editData.comfort_levels?.jumping_height || ''}
+                        onChange={(e) => setEditData({
+                          ...editData,
+                          comfort_levels: {
+                            ...editData.comfort_levels,
+                            jumping_height: parseInt(e.target.value) || 0
+                          }
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        readOnly={!isEditing}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Taken & Materiaal */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Taken & Materiaal</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Bereid tot taken</label>
+                      <div className="space-y-2">
+                        {['uitrijden', 'voeren', 'poetsen', 'longeren', 'stalwerk', 'transport'].map(task => (
+                          <label key={task} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={(editData.willing_tasks || []).includes(task)}
+                              onChange={(e) => {
+                                const tasks = editData.willing_tasks || [];
+                                if (e.target.checked) {
+                                  setEditData({...editData, willing_tasks: [...tasks, task]});
+                                } else {
+                                  setEditData({...editData, willing_tasks: tasks.filter((t: string) => t !== task)});
+                                }
+                              }}
+                              disabled={!isEditing}
+                              className="mr-2"
+                            />
+                            <span className="capitalize">{task}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Materiaal voorkeuren</label>
+                      <div className="space-y-2">
+                        {[
+                          { key: 'bitless_ok', label: 'Bitloos rijden OK' },
+                          { key: 'spurs', label: 'Sporen gebruiken' },
+                          { key: 'auxiliary_reins', label: 'Hulpteugels OK' },
+                          { key: 'own_helmet', label: 'Eigen helm' }
+                        ].map(item => (
+                          <label key={item.key} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={editData.material_preferences?.[item.key] || false}
+                              onChange={(e) => setEditData({
+                                ...editData,
+                                material_preferences: {
+                                  ...editData.material_preferences,
+                                  [item.key]: e.target.checked
+                                }
+                              })}
+                              disabled={!isEditing}
+                              className="mr-2"
+                            />
+                            <span>{item.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gezondheid & No-gos */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Gezondheid & Restricties</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Gezondheidsrestricties</label>
+                      <div className="space-y-2">
+                        {['hoogtevrees', 'rugproblemen', 'knieproblemen', 'allergieën', 'medicatie'].map(health => (
+                          <label key={health} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={(editData.health_restrictions || []).includes(health)}
+                              onChange={(e) => {
+                                const restrictions = editData.health_restrictions || [];
+                                if (e.target.checked) {
+                                  setEditData({...editData, health_restrictions: [...restrictions, health]});
+                                } else {
+                                  setEditData({...editData, health_restrictions: restrictions.filter((h: string) => h !== health)});
+                                }
+                              }}
+                              disabled={!isEditing}
+                              className="mr-2"
+                            />
+                            <span className="capitalize">{health}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">No-gos</label>
+                      <div className="space-y-2">
+                        {['drukke_stallen', 'avond_afspraken', 'weekenden', 'slecht_weer', 'grote_groepen'].map(nogo => (
+                          <label key={nogo} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={(editData.no_gos || []).includes(nogo)}
+                              onChange={(e) => {
+                                const nogos = editData.no_gos || [];
+                                if (e.target.checked) {
+                                  setEditData({...editData, no_gos: [...nogos, nogo]});
+                                } else {
+                                  setEditData({...editData, no_gos: nogos.filter((n: string) => n !== nogo)});
+                                }
+                              }}
+                              disabled={!isEditing}
+                              className="mr-2"
+                            />
+                            <span className="capitalize">{nogo.replace('_', ' ')}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={editData.insurance_coverage || false}
+                        onChange={(e) => setEditData({...editData, insurance_coverage: e.target.checked})}
+                        disabled={!isEditing}
+                        className="mr-2"
+                      />
+                      <span>Verzekeringsdekking aanwezig</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Video Intro */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Video Introductie</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Video URL</label>
+                    <input
+                      type="url"
+                      value={editData.video_intro_url || ''}
+                      onChange={(e) => setEditData({...editData, video_intro_url: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      readOnly={!isEditing}
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+              </>
             )}
 
             {userProfile?.role === 'owner' && (
