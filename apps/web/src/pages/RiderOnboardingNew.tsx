@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { UserIcon, ClockIcon, CurrencyEuroIcon, AcademicCapIcon, HeartIcon, WrenchScrewdriverIcon, ShieldCheckIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { UserIcon, ClockIcon, CurrencyEuroIcon, AcademicCapIcon, HeartIcon, CheckCircleIcon, CameraIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { api } from '../utils/api';
 import { calculateRiderProfileProgress } from '../utils/profileProgress';
 
@@ -178,6 +178,36 @@ const RiderOnboardingNew = () => {
   };
 
   const progress = calculateProgress();
+
+
+  // Question completeness checks
+  const isBasicInfoComplete = () => {
+    return basicInfo.first_name && basicInfo.last_name && basicInfo.phone && 
+           basicInfo.date_of_birth && basicInfo.postcode && 
+           basicInfo.max_travel_distance_km > 0 && basicInfo.transport_options.length > 0;
+  };
+
+  const isAvailabilityComplete = () => {
+    return availability.available_days.length > 0 && availability.available_time_blocks.length > 0 &&
+           availability.session_duration_min > 0 && availability.session_duration_max > 0;
+  };
+
+  const isBudgetComplete = () => {
+    return budget.budget_min_euro > 0 && budget.budget_max_euro > 0;
+  };
+
+  const isExperienceComplete = () => {
+    return experience.experience_years >= 0 && experience.certification_level;
+  };
+
+  const isGoalsComplete = () => {
+    return goals.riding_goals.length > 0 && goals.discipline_preferences.length > 0 && 
+           goals.personality_style.length > 0;
+  };
+
+  const isTasksComplete = () => {
+    return tasks.willing_tasks.length > 0;
+  };
 
   // Auto-save functionaliteit
   const saveProgress = useCallback(async () => {
@@ -509,6 +539,9 @@ const RiderOnboardingNew = () => {
               <div className="flex items-center mb-4">
                 <UserIcon className="w-6 h-6 text-blue-600 mr-2" />
                 <h2 className="text-xl font-semibold text-gray-900">Basis Informatie</h2>
+                {!isBasicInfoComplete() && (
+                  <div className="ml-2 w-2 h-2 bg-amber-400 rounded-full animate-pulse" title="Nog niet compleet"></div>
+                )}
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -602,6 +635,9 @@ const RiderOnboardingNew = () => {
               <div className="flex items-center mb-4">
                 <ClockIcon className="w-6 h-6 text-blue-600 mr-2" />
                 <h2 className="text-xl font-semibold text-gray-900">Beschikbaarheid</h2>
+                {!isAvailabilityComplete() && (
+                  <div className="ml-2 w-2 h-2 bg-amber-400 rounded-full animate-pulse" title="Nog niet compleet"></div>
+                )}
               </div>
 
               <div>
@@ -700,6 +736,9 @@ const RiderOnboardingNew = () => {
               <div className="flex items-center mb-4">
                 <CurrencyEuroIcon className="w-6 h-6 text-blue-600 mr-2" />
                 <h2 className="text-xl font-semibold text-gray-900">Budget</h2>
+                {!isBudgetComplete() && (
+                  <div className="ml-2 w-2 h-2 bg-amber-400 rounded-full animate-pulse" title="Nog niet compleet"></div>
+                )}
               </div>
 
               <div>
@@ -737,12 +776,15 @@ const RiderOnboardingNew = () => {
             </motion.div>
           )}
 
-          {/* Step 4: Ervaring & Niveau */}
+          {/* Step 4: Ervaring */}
           {currentStep === 4 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
               <div className="flex items-center mb-4">
                 <AcademicCapIcon className="w-6 h-6 text-blue-600 mr-2" />
                 <h2 className="text-xl font-semibold text-gray-900">Ervaring & Niveau</h2>
+                {!isExperienceComplete() && (
+                  <div className="ml-2 w-2 h-2 bg-amber-400 rounded-full animate-pulse" title="Nog niet compleet"></div>
+                )}
               </div>
 
               <div>
@@ -831,6 +873,9 @@ const RiderOnboardingNew = () => {
               <div className="flex items-center mb-4">
                 <HeartIcon className="w-6 h-6 text-blue-600 mr-2" />
                 <h2 className="text-xl font-semibold text-gray-900">Doelen & Voorkeuren</h2>
+                {!isGoalsComplete() && (
+                  <div className="ml-2 w-2 h-2 bg-amber-400 rounded-full animate-pulse" title="Nog niet compleet"></div>
+                )}
               </div>
 
               <div>
@@ -905,8 +950,11 @@ const RiderOnboardingNew = () => {
           {currentStep === 6 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
               <div className="flex items-center mb-4">
-                <WrenchScrewdriverIcon className="w-6 h-6 text-blue-600 mr-2" />
+                <CheckCircleIcon className="w-6 h-6 text-blue-600 mr-2" />
                 <h2 className="text-xl font-semibold text-gray-900">Taken & Verantwoordelijkheden</h2>
+                {!isTasksComplete() && (
+                  <div className="ml-2 w-2 h-2 bg-amber-400 rounded-full animate-pulse" title="Nog niet compleet"></div>
+                )}
               </div>
 
               <div>
