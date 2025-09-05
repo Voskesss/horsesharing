@@ -15,6 +15,7 @@ const RiderOnboardingNew = () => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSaveAlert, setShowSaveAlert] = useState(false);
 
   // Step 1: Basis informatie
   const [basicInfo, setBasicInfo] = useState({
@@ -260,57 +261,85 @@ const RiderOnboardingNew = () => {
         token = 'placeholder-token';
       }
 
-      // Prepare data for saving
+      // Helper function to only include non-empty values
+      const filterNonEmpty = (obj: any) => {
+        const filtered: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+          if (value !== '' && value !== null && value !== undefined && 
+              !(Array.isArray(value) && value.length === 0) &&
+              !(typeof value === 'object' && Object.keys(value).length === 0)) {
+            filtered[key] = value;
+          }
+        }
+        return filtered;
+      };
+
+      // Only include fields that have been filled in
       const profileData = {
-        // Basic info
-        first_name: basicInfo.first_name,
-        last_name: basicInfo.last_name,
-        phone: basicInfo.phone,
-        date_of_birth: basicInfo.date_of_birth,
-        postcode: basicInfo.postcode,
-        max_travel_distance_km: basicInfo.max_travel_distance_km,
-        transport_options: basicInfo.transport_options,
+        ...filterNonEmpty({
+          // Basic info
+          first_name: basicInfo.first_name,
+          last_name: basicInfo.last_name,
+          phone: basicInfo.phone,
+          date_of_birth: basicInfo.date_of_birth,
+          postcode: basicInfo.postcode,
+          max_travel_distance_km: basicInfo.max_travel_distance_km,
+        }),
+        // Arrays - only include if not empty
+        ...(basicInfo.transport_options.length > 0 && { transport_options: basicInfo.transport_options }),
         
-        // Availability
-        available_days: availability.available_days,
-        available_time_blocks: availability.available_time_blocks,
-        session_duration_min: availability.session_duration_min,
-        session_duration_max: availability.session_duration_max,
-        start_date: availability.start_date,
-        arrangement_duration: availability.arrangement_duration,
+        // Availability - only include if filled
+        ...(availability.available_days.length > 0 && { available_days: availability.available_days }),
+        ...(availability.available_time_blocks.length > 0 && { available_time_blocks: availability.available_time_blocks }),
+        ...filterNonEmpty({
+          session_duration_min: availability.session_duration_min,
+          session_duration_max: availability.session_duration_max,
+          start_date: availability.start_date,
+          arrangement_duration: availability.arrangement_duration,
+        }),
         
-        // Budget
-        budget_min_euro: budget.budget_min_euro,
-        budget_max_euro: budget.budget_max_euro,
-        budget_type: budget.budget_type,
+        // Budget - only include if filled
+        ...filterNonEmpty({
+          budget_min_euro: budget.budget_min_euro,
+          budget_max_euro: budget.budget_max_euro,
+          budget_type: budget.budget_type,
+        }),
         
-        // Experience
-        experience_years: experience.experience_years,
-        certification_level: experience.certification_level,
-        previous_instructors: experience.previous_instructors,
-        comfort_levels: experience.comfort_levels,
+        // Experience - only include if filled
+        ...filterNonEmpty({
+          experience_years: experience.experience_years,
+          certification_level: experience.certification_level,
+        }),
+        ...(experience.previous_instructors.length > 0 && { previous_instructors: experience.previous_instructors }),
+        ...(Object.keys(experience.comfort_levels).length > 0 && { comfort_levels: experience.comfort_levels }),
         
-        // Goals
-        riding_goals: goals.riding_goals,
-        discipline_preferences: goals.discipline_preferences,
-        personality_style: goals.personality_style,
+        // Goals - only include if filled
+        ...(goals.riding_goals.length > 0 && { riding_goals: goals.riding_goals }),
+        ...(goals.discipline_preferences.length > 0 && { discipline_preferences: goals.discipline_preferences }),
+        ...(goals.personality_style.length > 0 && { personality_style: goals.personality_style }),
         
-        // Tasks
-        willing_tasks: tasks.willing_tasks,
+        // Tasks - only include if filled
+        ...(tasks.willing_tasks.length > 0 && { willing_tasks: tasks.willing_tasks }),
         
-        // Preferences
-        material_preferences: preferences.material_preferences,
-        health_restrictions: preferences.health_restrictions,
-        insurance_coverage: preferences.insurance_coverage,
-        no_gos: preferences.no_gos,
+        // Preferences - only include if filled
+        ...(Object.keys(preferences.material_preferences).length > 0 && { material_preferences: preferences.material_preferences }),
+        ...(preferences.health_restrictions.length > 0 && { health_restrictions: preferences.health_restrictions }),
+        ...(preferences.insurance_coverage !== undefined && { insurance_coverage: preferences.insurance_coverage }),
+        ...(preferences.no_gos.length > 0 && { no_gos: preferences.no_gos }),
         
-        // Media
-        video_intro_url: media.video_intro_url
+        // Media - only include if filled
+        ...filterNonEmpty({
+          video_intro_url: media.video_intro_url
+        })
         // Note: photos worden apart gehandeld vanwege File objects
       };
 
       await api.updateRiderProfile(token, profileData);
       setLastSaved(new Date());
+      
+      // Show save confirmation
+      setShowSaveAlert(true);
+      setTimeout(() => setShowSaveAlert(false), 3000);
     } catch (error) {
       console.error('Error auto-saving profile:', error);
     } finally {
@@ -319,16 +348,17 @@ const RiderOnboardingNew = () => {
   }, [isAuthenticated, user, isSaving, kindeAuth, basicInfo, availability, budget, experience, goals, tasks, preferences, media]);
 
   // Auto-save elke 30 seconden als er wijzigingen zijn
-  // DISABLED: Dit overschrijft data van andere pagina's
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     if (progress.answeredQuestions > 0) {
-  //       saveProgress();
-  //     }
-  //   }, 30000); // 30 seconden
+  // Nu veilig - slaat alleen ingevulde velden op
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (progress.answeredQuestions > 0) {
+        console.log('🔄 Auto-saving onboarding progress...');
+        saveProgress();
+      }
+    }, 30000); // 30 seconden
 
-  //   return () => clearInterval(interval);
-  // }, [progress.answeredQuestions, saveProgress]);
+    return () => clearInterval(interval);
+  }, [progress.answeredQuestions, saveProgress]);
 
   const transportOptions = ['auto', 'openbaar_vervoer', 'fiets', 'te_voet'];
   const weekDays = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag'];
@@ -472,6 +502,21 @@ const RiderOnboardingNew = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+      {/* Save Alert */}
+      {showSaveAlert && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -50 }}
+          className="fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Voortgang opgeslagen</span>
+        </motion.div>
+      )}
+      
       <div className="max-w-2xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
