@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -12,6 +12,9 @@ const RiderOnboardingNew = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 8;
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Step 1: Basis informatie
   const [basicInfo, setBasicInfo] = useState({
@@ -146,15 +149,205 @@ const RiderOnboardingNew = () => {
     }
   };
 
+  // Progress calculation based on answered questions
+  const calculateProgress = () => {
+    let totalQuestions = 0;
+    let answeredQuestions = 0;
+
+    // Step 1: Basic info (7 questions)
+    totalQuestions += 7;
+    if (basicInfo.first_name) answeredQuestions++;
+    if (basicInfo.last_name) answeredQuestions++;
+    if (basicInfo.phone) answeredQuestions++;
+    if (basicInfo.date_of_birth) answeredQuestions++;
+    if (basicInfo.postcode) answeredQuestions++;
+    if (basicInfo.max_travel_distance_km > 0) answeredQuestions++;
+    if (basicInfo.transport_options.length > 0) answeredQuestions++;
+
+    // Step 2: Availability (5 questions)
+    totalQuestions += 5;
+    if (availability.available_days.length > 0) answeredQuestions++;
+    if (availability.available_time_blocks.length > 0) answeredQuestions++;
+    if (availability.session_duration_min > 0) answeredQuestions++;
+    if (availability.session_duration_max > 0) answeredQuestions++;
+    if (availability.arrangement_duration) answeredQuestions++;
+
+    // Step 3: Budget (2 questions)
+    totalQuestions += 2;
+    if (budget.budget_min_euro > 0) answeredQuestions++;
+    if (budget.budget_max_euro > 0) answeredQuestions++;
+
+    // Step 4: Experience (3 questions)
+    totalQuestions += 3;
+    if (experience.experience_years >= 0) answeredQuestions++;
+    if (experience.certification_level) answeredQuestions++;
+    if (Object.keys(experience.comfort_levels).some(key => experience.comfort_levels[key as keyof typeof experience.comfort_levels])) answeredQuestions++;
+
+    // Step 5: Goals (3 questions)
+    totalQuestions += 3;
+    if (goals.riding_goals.length > 0) answeredQuestions++;
+    if (goals.discipline_preferences.length > 0) answeredQuestions++;
+    if (goals.personality_style.length > 0) answeredQuestions++;
+
+    // Step 6: Tasks (1 question)
+    totalQuestions += 1;
+    if (tasks.willing_tasks.length > 0) answeredQuestions++;
+
+    // Step 7: Health & Insurance (2 questions)
+    totalQuestions += 2;
+    if (preferences.health_restrictions.length > 0 || preferences.insurance_coverage) answeredQuestions++;
+    if (preferences.insurance_coverage !== undefined) answeredQuestions++;
+
+    // Step 8: Media (1 question - optional)
+    totalQuestions += 1;
+    if (media.video_intro_url) answeredQuestions++;
+
+    return {
+      totalQuestions,
+      answeredQuestions,
+      percentage: Math.round((answeredQuestions / totalQuestions) * 100)
+    };
+  };
+
+  const progress = calculateProgress();
+
   const transportOptions = ['auto', 'openbaar_vervoer', 'fiets', 'te_voet'];
   const weekDays = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag'];
   const timeBlocks = ['ochtend', 'middag', 'avond'];
   const ridingGoals = ['recreatie', 'training', 'wedstrijden', 'therapie', 'sociale_contacten'];
   const disciplines = ['dressuur', 'springen', 'eventing', 'western', 'buitenritten', 'natural_horsemanship'];
-  const personalityStyles = ['geduldig', 'consistent', 'speels', 'rustig', 'energiek', 'flexibel'];
   const availableTasks = ['uitrijden', 'voeren', 'poetsen', 'longeren', 'stalwerk', 'transport'];
   const healthRestrictions = ['hoogtevrees', 'rugproblemen', 'knieproblemen', 'allergieën', 'medicatie'];
   const noGos = ['drukke_stallen', 'avond_afspraken', 'weekenden', 'slecht_weer', 'grote_groepen'];
+  const personalityStyles = ['rustig', 'energiek', 'geduldig', 'assertief', 'flexibel', 'gestructureerd'];
+
+  // Load existing rider profile data
+  useEffect(() => {
+    const loadExistingProfile = async () => {
+      if (!isAuthenticated || !user) return;
+      
+      try {
+        setIsLoading(true);
+        // Get Kinde token
+        let token;
+        try {
+          // @ts-ignore - getToken exists but TypeScript doesn't recognize it
+          token = await kindeAuth.getToken();
+        } catch (tokenError) {
+          console.error('Error getting token:', tokenError);
+          token = 'placeholder-token';
+        }
+        
+        // Try to get existing rider profile
+        console.log('🔍 Loading existing profile for onboarding...');
+        
+        try {
+          const existingProfile = await api.getRiderProfile(token);
+          
+          if (existingProfile) {
+            console.log('✅ Existing rider profile found, pre-filling onboarding:', JSON.stringify(existingProfile, null, 2));
+          
+          // Fill basic info
+          setBasicInfo(prev => ({
+            ...prev,
+            first_name: existingProfile.first_name || prev.first_name,
+            last_name: existingProfile.last_name || prev.last_name,
+            phone: existingProfile.phone || prev.phone,
+            date_of_birth: existingProfile.date_of_birth || prev.date_of_birth,
+            postcode: existingProfile.postcode || prev.postcode,
+            max_travel_distance_km: existingProfile.max_travel_distance_km || prev.max_travel_distance_km,
+            transport_options: existingProfile.transport_options || prev.transport_options
+          }));
+          
+          // Fill availability
+          setAvailability(prev => ({
+            ...prev,
+            available_days: existingProfile.available_days || prev.available_days,
+            available_time_blocks: existingProfile.available_time_blocks || prev.available_time_blocks,
+            session_duration_min: existingProfile.session_duration_min || prev.session_duration_min,
+            session_duration_max: existingProfile.session_duration_max || prev.session_duration_max,
+            start_date: existingProfile.start_date || prev.start_date,
+            arrangement_duration: existingProfile.arrangement_duration || prev.arrangement_duration
+          }));
+          
+          // Fill budget
+          setBudget(prev => ({
+            ...prev,
+            budget_min_euro: existingProfile.budget_min_euro || prev.budget_min_euro,
+            budget_max_euro: existingProfile.budget_max_euro || prev.budget_max_euro,
+            budget_type: existingProfile.budget_type || prev.budget_type
+          }));
+          
+          // Fill experience
+          setExperience(prev => ({
+            ...prev,
+            experience_years: existingProfile.experience_years || prev.experience_years,
+            certification_level: existingProfile.certification_level || prev.certification_level,
+            previous_instructors: existingProfile.previous_instructors || prev.previous_instructors,
+            comfort_levels: existingProfile.comfort_levels || prev.comfort_levels
+          }));
+          
+          // Fill goals
+          setGoals(prev => ({
+            ...prev,
+            riding_goals: existingProfile.riding_goals || prev.riding_goals,
+            discipline_preferences: existingProfile.discipline_preferences || prev.discipline_preferences,
+            personality_style: existingProfile.personality_style || prev.personality_style
+          }));
+          
+          // Fill tasks
+          setTasks(prev => ({
+            ...prev,
+            willing_tasks: existingProfile.willing_tasks || prev.willing_tasks,
+            task_frequency: existingProfile.task_frequency || prev.task_frequency
+          }));
+          
+          // Fill preferences
+          setPreferences(prev => ({
+            ...prev,
+            material_preferences: existingProfile.material_preferences || prev.material_preferences,
+            health_restrictions: existingProfile.health_restrictions || prev.health_restrictions,
+            insurance_coverage: existingProfile.insurance_coverage || prev.insurance_coverage,
+            no_gos: existingProfile.no_gos || prev.no_gos
+          }));
+          
+          // Fill media
+          setMedia(prev => ({
+            ...prev,
+            video_intro_url: existingProfile.video_intro_url || prev.video_intro_url
+          }));
+          } else {
+            console.log('❌ No existing profile found, starting fresh onboarding');
+          }
+        } catch (error) {
+          console.log('❌ Error loading profile:', error);
+          // This is fine - user might not have a profile yet
+        } finally {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.log('❌ Error in loadExistingProfile:', error);
+        setIsLoading(false);
+      }
+    };
+    
+    loadExistingProfile();
+  }, [isAuthenticated, user, kindeAuth]);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Profiel wordt geladen...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -179,12 +372,27 @@ const RiderOnboardingNew = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-blue-600">Stap {currentStep} van {totalSteps}</span>
-              <span className="text-sm text-gray-500">{Math.round((currentStep / totalSteps) * 100)}% voltooid</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">
+                  {progress.answeredQuestions} van {progress.totalQuestions} vragen beantwoord ({progress.percentage}%)
+                </span>
+                {isSaving && (
+                  <span className="text-xs text-blue-600 flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-blue-600 mr-1"></div>
+                    Opslaan...
+                  </span>
+                )}
+                {lastSaved && !isSaving && (
+                  <span className="text-xs text-green-600">
+                    Opgeslagen om {lastSaved.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                style={{ width: `${progress.percentage}%` }}
               ></div>
             </div>
           </div>

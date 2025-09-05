@@ -16,6 +16,7 @@ import Callback from './pages/Callback';
 import ProfileChoice from './pages/ProfileChoice';
 import Profile from './pages/Profile';
 import RiderOnboardingNew from './pages/RiderOnboardingNew';
+import RiderProfileNew from './pages/RiderProfileNew';
 import OwnerProfile from './pages/OwnerProfile';
 
 function App() {

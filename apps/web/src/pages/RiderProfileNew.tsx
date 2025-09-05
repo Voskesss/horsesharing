@@ -75,6 +75,10 @@ const RiderProfile = () => {
 
   const progress = calculateProgress();
 
+  // Auto-save functionality
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   // Step 1: Basis informatie (exact zoals onboarding)
   const [basicInfo, setBasicInfo] = useState({
     first_name: user?.given_name || '',
@@ -157,6 +161,53 @@ const RiderProfile = () => {
   const disciplines = ['dressuur', 'springen', 'eventing', 'western', 'buitenritten', 'natural_horsemanship'];
   const availableTasks = ['uitrijden', 'voeren', 'poetsen', 'longeren', 'stalwerk', 'transport'];
   const healthRestrictions = ['hoogtevrees', 'rugproblemen', 'knieproblemen', 'allergieën', 'medicatie'];
+
+  // Auto-save function
+  const autoSave = async () => {
+    if (!isAuthenticated || !user || isSaving) return;
+    
+    try {
+      setIsSaving(true);
+      let token;
+      try {
+        // @ts-ignore
+        token = await kindeAuth.getToken();
+      } catch (tokenError) {
+        console.error('Error getting token:', tokenError);
+        token = 'placeholder-token';
+      }
+
+      const profileData = {
+        ...basicInfo,
+        ...availability,
+        ...budget,
+        ...experience,
+        ...goals,
+        ...tasks,
+        ...preferences,
+        photos: [], // TODO: Handle file uploads
+        video_intro_url: media.video_intro_url,
+        is_complete: false // Auto-save = not complete yet
+      };
+
+      await api.updateRiderProfile(token, profileData);
+      setLastSaved(new Date());
+      console.log('✅ Auto-saved profile');
+    } catch (error) {
+      console.error('❌ Auto-save failed:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Auto-save every 30 seconds when data changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      autoSave();
+    }, 30000); // 30 seconds
+
+    return () => clearTimeout(timer);
+  }, [basicInfo, availability, budget, experience, goals, tasks, preferences, media]);
 
   // Load existing rider profile data
   useEffect(() => {
@@ -369,9 +420,22 @@ const RiderProfile = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-blue-600">Stap {currentStep} van {totalSteps}</span>
-              <span className="text-sm text-gray-500">
-                {progress.answeredQuestions} van {progress.totalQuestions} vragen beantwoord ({progress.percentage}%)
-              </span>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">
+                  {progress.answeredQuestions} van {progress.totalQuestions} vragen beantwoord ({progress.percentage}%)
+                </span>
+                {isSaving && (
+                  <span className="text-xs text-blue-600 flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-blue-600 mr-1"></div>
+                    Opslaan...
+                  </span>
+                )}
+                {lastSaved && !isSaving && (
+                  <span className="text-xs text-green-600">
+                    Opgeslagen om {lastSaved.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
