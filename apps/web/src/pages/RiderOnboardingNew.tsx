@@ -338,6 +338,7 @@ const RiderOnboardingNew = () => {
   const healthRestrictions = ['hoogtevrees', 'rugproblemen', 'knieproblemen', 'allergieën', 'medicatie'];
   const noGos = ['drukke_stallen', 'avond_afspraken', 'weekenden', 'slecht_weer', 'grote_groepen'];
   const personalityStyles = ['rustig', 'energiek', 'geduldig', 'assertief', 'flexibel', 'gestructureerd'];
+  const certificationLevels = ['beginner', 'gevorderd_beginner', 'intermediate', 'gevorderd', 'expert'];
 
   // Load existing rider profile data
   useEffect(() => {
@@ -776,13 +777,18 @@ const RiderOnboardingNew = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Certificering niveau</label>
-                <input
-                  type="text"
+                <select
                   value={experience.certification_level}
                   onChange={(e) => setExperience({...experience, certification_level: e.target.value})}
-                  placeholder="bijv. FNRS B1, KNHS 3"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                >
+                  <option value="">Selecteer niveau</option>
+                  {certificationLevels.map(level => (
+                    <option key={level} value={level}>
+                      {level.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
