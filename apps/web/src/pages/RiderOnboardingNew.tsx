@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -12,9 +12,8 @@ const RiderOnboardingNew = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 8;
-  // Removed unused state setters to fix lint warnings
-  // const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  // const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Step 1: Basis informatie
@@ -162,47 +161,42 @@ const RiderOnboardingNew = () => {
     
     // Step 1: Basic info (7 verplichte vragen)
     totalRequired += 7;
-    if (basicInfo.first_name) { answeredRequired++; console.log('✅ first_name:', answeredRequired); }
-    if (basicInfo.last_name) { answeredRequired++; console.log('✅ last_name:', answeredRequired); }
-    if (basicInfo.phone) { answeredRequired++; console.log('✅ phone:', answeredRequired); }
-    if (basicInfo.date_of_birth) { answeredRequired++; console.log('✅ date_of_birth:', answeredRequired); }
-    if (basicInfo.postcode) { answeredRequired++; console.log('✅ postcode:', answeredRequired); }
-    if (basicInfo.max_travel_distance_km > 0) { answeredRequired++; console.log('✅ max_travel_distance_km:', answeredRequired); }
-    if (basicInfo.transport_options.length > 0) { answeredRequired++; console.log('✅ transport_options:', answeredRequired); }
+    if (basicInfo.first_name) answeredRequired++;
+    if (basicInfo.last_name) answeredRequired++;
+    if (basicInfo.phone) answeredRequired++;
+    if (basicInfo.date_of_birth) answeredRequired++;
+    if (basicInfo.postcode) answeredRequired++;
+    if (basicInfo.max_travel_distance_km > 0) answeredRequired++;
+    if (basicInfo.transport_options.length > 0) answeredRequired++;
 
     // Step 2: Availability (4 verplichte vragen)
     totalRequired += 4;
-    if (availability.available_days.length > 0) { answeredRequired++; console.log('✅ available_days:', answeredRequired); }
-    if (availability.available_time_blocks.length > 0) { answeredRequired++; console.log('✅ available_time_blocks:', answeredRequired); }
-    if (availability.session_duration_min > 0) { answeredRequired++; console.log('✅ session_duration_min:', answeredRequired); }
-    if (availability.session_duration_max > 0) { answeredRequired++; console.log('✅ session_duration_max:', answeredRequired); }
+    if (availability.available_days.length > 0) answeredRequired++;
+    if (availability.available_time_blocks.length > 0) answeredRequired++;
+    if (availability.session_duration_min > 0) answeredRequired++;
+    if (availability.session_duration_max > 0) answeredRequired++;
 
     // Step 3: Budget (2 verplichte vragen)
     totalRequired += 2;
-    if (budget.budget_min_euro > 0) { answeredRequired++; console.log('✅ budget_min_euro:', answeredRequired); }
-    if (budget.budget_max_euro > 0) { answeredRequired++; console.log('✅ budget_max_euro:', answeredRequired); }
+    if (budget.budget_min_euro > 0) answeredRequired++;
+    if (budget.budget_max_euro > 0) answeredRequired++;
 
     // Step 4: Experience (2 verplichte vragen)
     totalRequired += 2;
-    if (experience.experience_years >= 0) { answeredRequired++; console.log('✅ experience_years:', answeredRequired); }
-    if (experience.certification_level) { answeredRequired++; console.log('✅ certification_level:', answeredRequired); }
+    if (experience.experience_years >= 0) answeredRequired++;
+    if (experience.certification_level) answeredRequired++;
 
     // Step 5: Goals (3 verplichte vragen)
     totalRequired += 3;
-    if (goals.riding_goals.length > 0) { answeredRequired++; console.log('✅ riding_goals:', answeredRequired); }
-    if (goals.discipline_preferences.length > 0) { answeredRequired++; console.log('✅ discipline_preferences:', answeredRequired); }
+    if (goals.riding_goals.length > 0) answeredRequired++;
+    if (goals.discipline_preferences.length > 0) answeredRequired++;
     if (goals.personality_style.length > 0) {
       answeredRequired++;
-      console.log('✅ personality_style counted as REQUIRED, answeredRequired now:', answeredRequired);
-      console.log('   personality_style array:', goals.personality_style);
-    } else {
-      console.log('❌ NO personality_style selected, answeredRequired stays:', answeredRequired);
-      console.log('   personality_style array is empty or undefined:', goals.personality_style);
     }
 
     // Step 6: Tasks (1 verplichte vraag)
     totalRequired += 1;
-    if (tasks.willing_tasks.length > 0) { answeredRequired++; console.log('✅ willing_tasks:', answeredRequired); }
+    if (tasks.willing_tasks.length > 0) answeredRequired++;
 
     // OPTIONELE VELDEN (verbeteren matching kwaliteit)
     
@@ -235,12 +229,6 @@ const RiderOnboardingNew = () => {
 
     const requiredPercentage = Math.round((answeredRequired / totalRequired) * 100);
     
-    console.log('🔍 Progress Debug:');
-    console.log('  totalRequired:', totalRequired);
-    console.log('  answeredRequired:', answeredRequired);
-    console.log('  percentage:', requiredPercentage);
-    console.log('  personality_style array:', goals.personality_style);
-    console.log('  SHOULD BE:', answeredRequired, '/', totalRequired, '=', Math.round((answeredRequired / totalRequired) * 100), '%');
     const matchingQuality = Math.round(((answeredRequired + answeredOptional) / (totalRequired + totalOptional)) * 100 * 10) / 10;
     
 
@@ -254,9 +242,92 @@ const RiderOnboardingNew = () => {
     };
   };
 
-  console.log('🚀 Component rendering, goals.personality_style:', goals.personality_style);
   const progress = calculateProgress();
-  console.log('📈 Progress result:', progress);
+
+  // Auto-save functionaliteit
+  const saveProgress = useCallback(async () => {
+    if (!isAuthenticated || !user || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      // Get Kinde token
+      let token;
+      try {
+        // @ts-ignore - getToken exists but TypeScript doesn't recognize it
+        token = await kindeAuth.getToken();
+      } catch (tokenError) {
+        console.error('Error getting token:', tokenError);
+        token = 'placeholder-token';
+      }
+
+      // Prepare data for saving
+      const profileData = {
+        // Basic info
+        first_name: basicInfo.first_name,
+        last_name: basicInfo.last_name,
+        phone: basicInfo.phone,
+        date_of_birth: basicInfo.date_of_birth,
+        postcode: basicInfo.postcode,
+        max_travel_distance_km: basicInfo.max_travel_distance_km,
+        transport_options: basicInfo.transport_options,
+        
+        // Availability
+        available_days: availability.available_days,
+        available_time_blocks: availability.available_time_blocks,
+        session_duration_min: availability.session_duration_min,
+        session_duration_max: availability.session_duration_max,
+        start_date: availability.start_date,
+        arrangement_duration: availability.arrangement_duration,
+        
+        // Budget
+        budget_min_euro: budget.budget_min_euro,
+        budget_max_euro: budget.budget_max_euro,
+        budget_type: budget.budget_type,
+        
+        // Experience
+        experience_years: experience.experience_years,
+        certification_level: experience.certification_level,
+        previous_instructors: experience.previous_instructors,
+        comfort_levels: experience.comfort_levels,
+        
+        // Goals
+        riding_goals: goals.riding_goals,
+        discipline_preferences: goals.discipline_preferences,
+        personality_style: goals.personality_style,
+        
+        // Tasks
+        willing_tasks: tasks.willing_tasks,
+        
+        // Preferences
+        material_preferences: preferences.material_preferences,
+        health_restrictions: preferences.health_restrictions,
+        insurance_coverage: preferences.insurance_coverage,
+        no_gos: preferences.no_gos,
+        
+        // Media
+        video_intro_url: media.video_intro_url
+        // Note: photos worden apart gehandeld vanwege File objects
+      };
+
+      await api.updateRiderProfile(token, profileData);
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Error auto-saving profile:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isAuthenticated, user, isSaving, kindeAuth, basicInfo, availability, budget, experience, goals, tasks, preferences, media]);
+
+  // Auto-save elke 30 seconden als er wijzigingen zijn
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (progress.answeredQuestions > 0) {
+        saveProgress();
+      }
+    }, 30000); // 30 seconden
+
+    return () => clearInterval(interval);
+  }, [progress.answeredQuestions, saveProgress]);
 
   const transportOptions = ['auto', 'openbaar_vervoer', 'fiets', 'te_voet'];
   const weekDays = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag'];
@@ -430,7 +501,17 @@ const RiderOnboardingNew = () => {
                     <span className="ml-1">({progress.optionalCompleted}/{progress.totalOptional} optioneel)</span>
                   </div>
                 </div>
-                {/* Auto-save status will be implemented later */}
+                {isSaving && (
+                  <span className="text-xs text-blue-600 flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-blue-600 mr-1"></div>
+                    Opslaan...
+                  </span>
+                )}
+                {lastSaved && !isSaving && (
+                  <span className="text-xs text-green-600">
+                    Opgeslagen om {lastSaved.toLocaleTimeString()}
+                  </span>
+                )}
               </div>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -790,41 +871,17 @@ const RiderOnboardingNew = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Persoonlijkheid stijl</label>
-                <div className="mb-2 flex gap-2">
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      console.log('🧹 CLEARING ALL personality styles');
-                      setGoals({...goals, personality_style: []});
-                    }}
-                    className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded border border-red-300 hover:bg-red-200"
-                  >
-                    Clear All
-                  </button>
-                  <span className="text-xs text-gray-500 self-center">
-                    Selected: {goals.personality_style.length}
-                  </span>
-                </div>
                 <div className="grid grid-cols-2 gap-2">
                   {personalityStyles.map(style => (
                     <button
                       key={style}
                       type="button"
                       onClick={() => {
-                        console.log('🔄 CLICKING personality style:', style);
-                        console.log('📊 BEFORE - personality_style array:', goals.personality_style);
                         const isCurrentlySelected = goals.personality_style.includes(style);
-                        console.log('🔍 Is currently selected?', isCurrentlySelected);
-                        
                         const newArray = isCurrentlySelected 
                           ? goals.personality_style.filter(item => item !== style)
                           : [...goals.personality_style, style];
-                        console.log('✅ AFTER - new personality_style array:', newArray);
-                        
-                        const newGoals = {...goals, personality_style: newArray};
-                        console.log('🎯 New goals object:', newGoals);
-                        setGoals(newGoals);
-                        console.log('🔄 setGoals called');
+                        setGoals({...goals, personality_style: newArray});
                       }}
                       className={`p-2 text-sm rounded-lg border transition-colors ${
                         goals.personality_style.includes(style)
