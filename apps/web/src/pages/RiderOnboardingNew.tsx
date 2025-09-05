@@ -863,7 +863,7 @@ const RiderOnboardingNew = () => {
                     <label key={item.key} className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={experience.comfort_levels[item.key as keyof typeof experience.comfort_levels] || false}
+                        checked={Boolean(experience.comfort_levels[item.key as keyof typeof experience.comfort_levels])}
                         onChange={(e) => setExperience({
                           ...experience,
                           comfort_levels: {...experience.comfort_levels, [item.key]: e.target.checked}
