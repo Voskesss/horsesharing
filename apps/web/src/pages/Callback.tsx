@@ -32,16 +32,59 @@ const Callback = () => {
           }
           
           if (token && token !== 'placeholder-token') {
-            console.log('Checking if user exists in backend with real token...');
-            const userExists = await api.checkUserExists(token);
-            console.log('User exists in backend:', userExists);
+            console.log('Checking user profile and completion status...');
             
-            if (userExists) {
-              console.log('User exists, redirecting to dashboard');
-              navigate('/dashboard', { replace: true });
-            } else {
-              console.log('User does not exist, redirecting to onboarding');
-              navigate('/onboarding', { replace: true });
+            try {
+              const userProfile = await api.getUserProfile(token);
+              console.log('User profile:', userProfile);
+              
+              if (userProfile) {
+                // User exists - check if profile is actually complete
+                console.log('User profile data:', JSON.stringify(userProfile, null, 2));
+                
+                // Check if user has completed their profile based on role
+                let profileComplete = false;
+                
+                if (userProfile.role === 'rider') {
+                  // For rider: check if rider_profile exists
+                  profileComplete = userProfile.rider_profile && Object.keys(userProfile.rider_profile).length > 0;
+                  console.log('Rider profile complete:', profileComplete);
+                } else if (userProfile.role === 'owner') {
+                  // For owner: check if owner_profile exists
+                  profileComplete = userProfile.owner_profile && Object.keys(userProfile.owner_profile).length > 0;
+                  console.log('Owner profile complete:', profileComplete);
+                } else if (userProfile.role === 'both') {
+                  // For both: check if at least one profile exists
+                  const hasRiderProfile = userProfile.rider_profile && Object.keys(userProfile.rider_profile).length > 0;
+                  const hasOwnerProfile = userProfile.owner_profile && Object.keys(userProfile.owner_profile).length > 0;
+                  profileComplete = hasRiderProfile || hasOwnerProfile;
+                  console.log('Both role - Rider profile:', hasRiderProfile, 'Owner profile:', hasOwnerProfile, 'Complete:', profileComplete);
+                }
+                
+                if (profileComplete) {
+                  console.log('User has completed profile, redirecting to dashboard');
+                  navigate('/dashboard', { replace: true });
+                } else {
+                  console.log('User profile incomplete, redirecting to onboarding');
+                  navigate('/onboarding', { replace: true });
+                }
+              } else {
+                console.log('User does not exist, redirecting to onboarding');
+                navigate('/onboarding', { replace: true });
+              }
+            } catch (error) {
+              console.error('Error getting user profile:', error);
+              // Fallback to basic user existence check
+              const userExists = await api.checkUserExists(token);
+              console.log('Fallback - User exists in backend:', userExists);
+              
+              if (userExists) {
+                console.log('User exists (fallback), redirecting to dashboard');
+                navigate('/dashboard', { replace: true });
+              } else {
+                console.log('User does not exist (fallback), redirecting to onboarding');
+                navigate('/onboarding', { replace: true });
+              }
             }
           } else {
             console.log('No valid token available, redirecting to onboarding');

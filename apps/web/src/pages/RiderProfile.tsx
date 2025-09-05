@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { UserIcon, MapPinIcon, StarIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { UserIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { api } from '../utils/api';
 
 const RiderProfile = () => {
-  const { user, isAuthenticated } = useKindeAuth();
+  const kindeAuth = useKindeAuth();
+  const { user, isAuthenticated } = kindeAuth;
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -82,13 +84,63 @@ const RiderProfile = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to save rider profile
-      console.log('Saving rider profile:', { personalData, riderPreferences, media });
+      // Get Kinde token for API call
+      let token;
+      try {
+        // @ts-ignore - getToken exists but TypeScript doesn't recognize it
+        token = await kindeAuth.getToken();
+      } catch (tokenError) {
+        console.error('Error getting token:', tokenError);
+        token = 'placeholder-token';
+      }
+
+      // Prepare flexible profile data structure
+      const profileData = {
+        first_name: personalData.firstName,
+        last_name: personalData.lastName,
+        phone: personalData.phone,
+        date_of_birth: personalData.dateOfBirth,
+        address_data: {
+          address: personalData.address,
+          city: personalData.city,
+          postal_code: personalData.postalCode
+        },
+        experience_data: {
+          level: riderPreferences.experience,
+          disciplines: riderPreferences.disciplines
+        },
+        preferences_data: {
+          preferred_age: riderPreferences.preferredAge,
+          preferred_size: riderPreferences.preferredSize,
+          location: riderPreferences.location,
+          max_distance: riderPreferences.maxDistance
+        },
+        availability_data: {
+          days: riderPreferences.availability
+        },
+        goals_data: {
+          description: riderPreferences.description,
+          goals: riderPreferences.goals
+        },
+        media_data: {
+          photos: [], // TODO: Handle file uploads later
+          videos: []
+        },
+        is_complete: true
+      };
+
+      console.log('Saving rider profile:', profileData);
       
-      // For now, redirect to dashboard
+      // Save profile via API
+      await api.createRiderProfile(token, profileData);
+      console.log('Rider profile saved successfully!');
+      
+      // Redirect to dashboard
       navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Error saving rider profile:', error);
+      // Still redirect for now, but show error
+      alert('Er is een fout opgetreden bij het opslaan van je profiel. Probeer het later opnieuw.');
     } finally {
       setIsSubmitting(false);
     }

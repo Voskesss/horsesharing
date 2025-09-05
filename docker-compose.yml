@@ -37,6 +37,8 @@ services:
       - "8000:8000"
     volumes:
       - ./apps/api:/app
+    env_file:
+      - ./apps/api/.env
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/horsesharing
       - REDIS_URL=redis://redis:6379

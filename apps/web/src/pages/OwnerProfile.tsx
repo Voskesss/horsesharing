@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { HomeIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { api } from '../utils/api';
 
 const OwnerProfile = () => {
-  const { user, isAuthenticated } = useKindeAuth();
+  const kindeAuth = useKindeAuth();
+  const { user, isAuthenticated } = kindeAuth;
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -60,10 +62,62 @@ const OwnerProfile = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      console.log('Saving owner profile:', { personalData, horses });
+      // Get Kinde token for API call
+      let token;
+      try {
+        // @ts-ignore - getToken exists but TypeScript doesn't recognize it
+        token = await kindeAuth.getToken();
+      } catch (tokenError) {
+        console.error('Error getting token:', tokenError);
+        token = 'placeholder-token';
+      }
+
+      // Prepare flexible profile data structure
+      const profileData = {
+        first_name: personalData.firstName,
+        last_name: personalData.lastName,
+        phone: personalData.phone,
+        stable_data: {
+          name: personalData.stableName,
+          address: personalData.address,
+          city: personalData.city,
+          postal_code: personalData.postalCode,
+          facilities: '',
+          description: ''
+        },
+        horses_data: horses.map(horse => ({
+          name: horse.name,
+          age: horse.age,
+          breed: horse.breed,
+          gender: horse.gender,
+          height: '',
+          discipline: '',
+          experience_level: '',
+          character: '',
+          special_needs: ''
+        })),
+        preferences_data: {
+          // Can be extended later for owner preferences
+        },
+        media_data: {
+          stable_photos: [], // TODO: Handle file uploads later
+          horse_photos: {}
+        },
+        is_complete: true
+      };
+
+      console.log('Saving owner profile:', profileData);
+      
+      // Save profile via API
+      await api.createOwnerProfile(token, profileData);
+      console.log('Owner profile saved successfully!');
+      
+      // Redirect to dashboard
       navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Error saving owner profile:', error);
+      // Still redirect for now, but show error
+      alert('Er is een fout opgetreden bij het opslaan van je profiel. Probeer het later opnieuw.');
     } finally {
       setIsSubmitting(false);
     }

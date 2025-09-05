@@ -1,10 +1,51 @@
 import { motion } from 'framer-motion';
 import { useKindeAuth } from '@kinde-oss/kinde-auth-react';
 import { Link } from 'react-router-dom';
-import { CalendarIcon, HeartIcon, ChatBubbleLeftIcon, CogIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, HeartIcon, ChatBubbleLeftIcon, CogIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from 'react';
+import { api } from '../utils/api';
 
 const Dashboard = () => {
-  const { user } = useKindeAuth();
+  const kindeAuth = useKindeAuth();
+  const { user } = kindeAuth;
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [profileComplete, setProfileComplete] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkProfileCompleteness = async () => {
+      try {
+        // @ts-ignore - getToken exists but TypeScript doesn't recognize it
+        const token = await kindeAuth.getToken();
+        if (token && token !== 'placeholder-token') {
+          const profile = await api.getUserProfile(token);
+          setUserProfile(profile);
+          
+          if (profile) {
+            let complete = false;
+            
+            if (profile.role === 'rider') {
+              complete = profile.rider_profile && Object.keys(profile.rider_profile).length > 0;
+            } else if (profile.role === 'owner') {
+              complete = profile.owner_profile && Object.keys(profile.owner_profile).length > 0;
+            } else if (profile.role === 'both') {
+              const hasRiderProfile = profile.rider_profile && Object.keys(profile.rider_profile).length > 0;
+              const hasOwnerProfile = profile.owner_profile && Object.keys(profile.owner_profile).length > 0;
+              complete = hasRiderProfile || hasOwnerProfile;
+            }
+            
+            setProfileComplete(complete);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking profile completeness:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkProfileCompleteness();
+  }, [kindeAuth]);
 
   const stats = [
     { name: 'Actieve Matches', value: '3', icon: HeartIcon },
@@ -28,6 +69,44 @@ const Dashboard = () => {
             Hier is een overzicht van je HorseSharing activiteiten.
           </p>
         </motion.div>
+
+        {/* Profile Incomplete Warning */}
+        {!loading && !profileComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4"
+          >
+            <div className="flex items-center">
+              <ExclamationTriangleIcon className="w-6 h-6 text-yellow-600 mr-3" />
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Profiel Incompleet
+                </h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Vul je profiel aan om matches te kunnen maken en alle functies te gebruiken.
+                </p>
+              </div>
+              <div className="ml-4">
+                {(userProfile as any)?.role === 'both' ? (
+                  <Link
+                    to="/profile-choice"
+                    className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors"
+                  >
+                    Profiel Aanvullen
+                  </Link>
+                ) : (
+                  <Link
+                    to={`/profile/${(userProfile as any)?.role}`}
+                    className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors"
+                  >
+                    Profiel Aanvullen
+                  </Link>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
