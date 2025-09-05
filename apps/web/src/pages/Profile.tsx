@@ -292,6 +292,32 @@ const Profile = () => {
                     readOnly={!isEditing}
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transport opties
+                  </label>
+                  <div className="space-y-2">
+                    {['auto', 'openbaar_vervoer', 'fiets', 'te_voet'].map(transport => (
+                      <label key={transport} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={(editData.transport_options || []).includes(transport)}
+                          onChange={(e) => {
+                            const options = editData.transport_options || [];
+                            if (e.target.checked) {
+                              setEditData({...editData, transport_options: [...options, transport]});
+                            } else {
+                              setEditData({...editData, transport_options: options.filter((t: string) => t !== transport)});
+                            }
+                          }}
+                          disabled={!isEditing}
+                          className="mr-2"
+                        />
+                        <span className="capitalize">{transport.replace('_', ' ')}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -351,6 +377,54 @@ const Profile = () => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Sessie Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Min sessie duur (min)</label>
+                      <input
+                        type="number"
+                        value={editData.session_duration_min || ''}
+                        onChange={(e) => setEditData({...editData, session_duration_min: parseInt(e.target.value) || 0})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        readOnly={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Max sessie duur (min)</label>
+                      <input
+                        type="number"
+                        value={editData.session_duration_max || ''}
+                        onChange={(e) => setEditData({...editData, session_duration_max: parseInt(e.target.value) || 0})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        readOnly={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Start datum</label>
+                      <input
+                        type="date"
+                        value={editData.start_date || ''}
+                        onChange={(e) => setEditData({...editData, start_date: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        readOnly={!isEditing}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Arrangement duur</label>
+                    <select
+                      value={editData.arrangement_duration || ''}
+                      onChange={(e) => setEditData({...editData, arrangement_duration: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={!isEditing}
+                    >
+                      <option value="">Selecteer...</option>
+                      <option value="temporary">Tijdelijk</option>
+                      <option value="ongoing">Doorlopend</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Budget */}
@@ -377,6 +451,20 @@ const Profile = () => {
                         readOnly={!isEditing}
                       />
                     </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Budget type</label>
+                    <select
+                      value={editData.budget_type || ''}
+                      onChange={(e) => setEditData({...editData, budget_type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={!isEditing}
+                    >
+                      <option value="">Selecteer...</option>
+                      <option value="monthly">Per maand</option>
+                      <option value="per_session">Per sessie</option>
+                    </select>
                   </div>
                 </div>
 
@@ -464,6 +552,45 @@ const Profile = () => {
                         <option value="gevorderd">Gevorderd</option>
                         <option value="expert">Expert</option>
                       </select>
+                    </div>
+                  </div>
+                  
+                  {/* Vorige instructeurs */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Vorige instructeurs (referenties)</label>
+                    <textarea
+                      value={(editData.previous_instructors || []).join('\n')}
+                      onChange={(e) => setEditData({...editData, previous_instructors: e.target.value.split('\n').filter(line => line.trim())})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      readOnly={!isEditing}
+                      rows={3}
+                      placeholder="Elke instructeur op een nieuwe regel..."
+                    />
+                  </div>
+                  
+                  {/* Persoonlijkheidsstijl */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Persoonlijkheidsstijl</label>
+                    <div className="space-y-2">
+                      {['geduldig', 'consistent', 'speels', 'competitief', 'rustig', 'energiek'].map(style => (
+                        <label key={style} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={(editData.personality_style || []).includes(style)}
+                            onChange={(e) => {
+                              const styles = editData.personality_style || [];
+                              if (e.target.checked) {
+                                setEditData({...editData, personality_style: [...styles, style]});
+                              } else {
+                                setEditData({...editData, personality_style: styles.filter((s: string) => s !== style)});
+                              }
+                            }}
+                            disabled={!isEditing}
+                            className="mr-2"
+                          />
+                          <span className="capitalize">{style}</span>
+                        </label>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -625,6 +752,36 @@ const Profile = () => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Taak Frequentie */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Taak frequentie</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {['uitrijden', 'voeren', 'poetsen', 'stalwerk'].map(task => (
+                        <div key={task} className="flex items-center space-x-2">
+                          <span className="text-sm w-20">{task}:</span>
+                          <select
+                            value={editData.task_frequency?.[task] || ''}
+                            onChange={(e) => setEditData({
+                              ...editData,
+                              task_frequency: {
+                                ...editData.task_frequency,
+                                [task]: e.target.value
+                              }
+                            })}
+                            className="flex-1 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            disabled={!isEditing}
+                          >
+                            <option value="">-</option>
+                            <option value="daily">Dagelijks</option>
+                            <option value="weekly">Wekelijks</option>
+                            <option value="monthly">Maandelijks</option>
+                            <option value="never">Nooit</option>
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Gezondheid & No-gos */}
@@ -694,11 +851,26 @@ const Profile = () => {
                   </div>
                 </div>
 
-                {/* Video Intro */}
+                {/* Media */}
                 <div className="bg-white rounded-lg shadow-sm p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Video Introductie</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Media</h3>
+                  
+                  {/* Foto's */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Foto URLs</label>
+                    <textarea
+                      value={(editData.photos || []).join('\n')}
+                      onChange={(e) => setEditData({...editData, photos: e.target.value.split('\n').filter(line => line.trim())})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      readOnly={!isEditing}
+                      rows={3}
+                      placeholder="Elke foto URL op een nieuwe regel..."
+                    />
+                  </div>
+                  
+                  {/* Video Intro */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Video URL</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Video Introductie URL</label>
                     <input
                       type="url"
                       value={editData.video_intro_url || ''}
