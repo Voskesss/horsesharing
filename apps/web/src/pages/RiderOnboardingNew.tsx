@@ -12,8 +12,9 @@ const RiderOnboardingNew = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 8;
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  // Removed unused state setters to fix lint warnings
+  // const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  // const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Step 1: Basis informatie
@@ -151,61 +152,111 @@ const RiderOnboardingNew = () => {
 
   // Progress calculation based on answered questions
   const calculateProgress = () => {
-    let totalQuestions = 0;
-    let answeredQuestions = 0;
+    let totalRequired = 0;
+    let answeredRequired = 0;
+    let totalOptional = 0;
+    let answeredOptional = 0;
+    
 
+    // VERPLICHTE VELDEN (bepalen progress percentage)
+    
     // Step 1: Basic info (7 verplichte vragen)
-    totalQuestions += 7;
-    if (basicInfo.first_name) answeredQuestions++;
-    if (basicInfo.last_name) answeredQuestions++;
-    if (basicInfo.phone) answeredQuestions++;
-    if (basicInfo.date_of_birth) answeredQuestions++;
-    if (basicInfo.postcode) answeredQuestions++;
-    if (basicInfo.max_travel_distance_km > 0) answeredQuestions++;
-    if (basicInfo.transport_options.length > 0) answeredQuestions++;
+    totalRequired += 7;
+    if (basicInfo.first_name) { answeredRequired++; console.log('✅ first_name:', answeredRequired); }
+    if (basicInfo.last_name) { answeredRequired++; console.log('✅ last_name:', answeredRequired); }
+    if (basicInfo.phone) { answeredRequired++; console.log('✅ phone:', answeredRequired); }
+    if (basicInfo.date_of_birth) { answeredRequired++; console.log('✅ date_of_birth:', answeredRequired); }
+    if (basicInfo.postcode) { answeredRequired++; console.log('✅ postcode:', answeredRequired); }
+    if (basicInfo.max_travel_distance_km > 0) { answeredRequired++; console.log('✅ max_travel_distance_km:', answeredRequired); }
+    if (basicInfo.transport_options.length > 0) { answeredRequired++; console.log('✅ transport_options:', answeredRequired); }
 
     // Step 2: Availability (4 verplichte vragen)
-    totalQuestions += 4;
-    if (availability.available_days.length > 0) answeredQuestions++;
-    if (availability.available_time_blocks.length > 0) answeredQuestions++;
-    if (availability.session_duration_min > 0) answeredQuestions++;
-    if (availability.session_duration_max > 0) answeredQuestions++;
+    totalRequired += 4;
+    if (availability.available_days.length > 0) { answeredRequired++; console.log('✅ available_days:', answeredRequired); }
+    if (availability.available_time_blocks.length > 0) { answeredRequired++; console.log('✅ available_time_blocks:', answeredRequired); }
+    if (availability.session_duration_min > 0) { answeredRequired++; console.log('✅ session_duration_min:', answeredRequired); }
+    if (availability.session_duration_max > 0) { answeredRequired++; console.log('✅ session_duration_max:', answeredRequired); }
 
     // Step 3: Budget (2 verplichte vragen)
-    totalQuestions += 2;
-    if (budget.budget_min_euro > 0) answeredQuestions++;
-    if (budget.budget_max_euro > 0) answeredQuestions++;
+    totalRequired += 2;
+    if (budget.budget_min_euro > 0) { answeredRequired++; console.log('✅ budget_min_euro:', answeredRequired); }
+    if (budget.budget_max_euro > 0) { answeredRequired++; console.log('✅ budget_max_euro:', answeredRequired); }
 
-    // Step 4: Experience (3 verplichte vragen - previous_instructors is optioneel)
-    totalQuestions += 3;
-    if (experience.experience_years >= 0) answeredQuestions++;
-    if (experience.certification_level) answeredQuestions++;
-    if (Object.keys(experience.comfort_levels).some(key => experience.comfort_levels[key as keyof typeof experience.comfort_levels])) answeredQuestions++;
+    // Step 4: Experience (2 verplichte vragen)
+    totalRequired += 2;
+    if (experience.experience_years >= 0) { answeredRequired++; console.log('✅ experience_years:', answeredRequired); }
+    if (experience.certification_level) { answeredRequired++; console.log('✅ certification_level:', answeredRequired); }
 
     // Step 5: Goals (3 verplichte vragen)
-    totalQuestions += 3;
-    if (goals.riding_goals.length > 0) answeredQuestions++;
-    if (goals.discipline_preferences.length > 0) answeredQuestions++;
-    if (goals.personality_style.length > 0) answeredQuestions++;
+    totalRequired += 3;
+    if (goals.riding_goals.length > 0) { answeredRequired++; console.log('✅ riding_goals:', answeredRequired); }
+    if (goals.discipline_preferences.length > 0) { answeredRequired++; console.log('✅ discipline_preferences:', answeredRequired); }
+    if (goals.personality_style.length > 0) {
+      answeredRequired++;
+      console.log('✅ personality_style counted as REQUIRED, answeredRequired now:', answeredRequired);
+      console.log('   personality_style array:', goals.personality_style);
+    } else {
+      console.log('❌ NO personality_style selected, answeredRequired stays:', answeredRequired);
+      console.log('   personality_style array is empty or undefined:', goals.personality_style);
+    }
 
     // Step 6: Tasks (1 verplichte vraag)
-    totalQuestions += 1;
-    if (tasks.willing_tasks.length > 0) answeredQuestions++;
+    totalRequired += 1;
+    if (tasks.willing_tasks.length > 0) { answeredRequired++; console.log('✅ willing_tasks:', answeredRequired); }
 
-    // Step 7: Insurance (1 verplichte vraag - health_restrictions en no_gos zijn optioneel)
-    totalQuestions += 1;
-    if (preferences.insurance_coverage !== undefined) answeredQuestions++;
+    // OPTIONELE VELDEN (verbeteren matching kwaliteit)
+    
+    // Experience optioneel
+    totalOptional += 2;
+    if (Object.keys(experience.comfort_levels).some(key => experience.comfort_levels[key as keyof typeof experience.comfort_levels])) {
+      answeredOptional++;
+    }
+    if (experience.previous_instructors.length > 0) {
+      answeredOptional++;
+    }
 
-    // Step 8: Media - volledig optioneel, telt niet mee
+    // Goals optioneel - personality_style nu verplicht, dus verwijderd uit optioneel
+
+    // Health & Preferences - alleen insurance telt mee voor matching quality
+    totalOptional += 1;
+    if (preferences.insurance_coverage === true || preferences.insurance_coverage === false) {
+      answeredOptional++;
+    }
+    // Health restrictions en no-gos tellen NIET mee voor matching quality
+
+    // Media (volledig optioneel)
+    totalOptional += 2;
+    if (media.photos.length > 0) {
+      answeredOptional++;
+    }
+    if (media.video_intro_url) {
+      answeredOptional++;
+    }
+
+    const requiredPercentage = Math.round((answeredRequired / totalRequired) * 100);
+    
+    console.log('🔍 Progress Debug:');
+    console.log('  totalRequired:', totalRequired);
+    console.log('  answeredRequired:', answeredRequired);
+    console.log('  percentage:', requiredPercentage);
+    console.log('  personality_style array:', goals.personality_style);
+    console.log('  SHOULD BE:', answeredRequired, '/', totalRequired, '=', Math.round((answeredRequired / totalRequired) * 100), '%');
+    const matchingQuality = Math.round(((answeredRequired + answeredOptional) / (totalRequired + totalOptional)) * 100 * 10) / 10;
+    
 
     return {
-      totalQuestions,
-      answeredQuestions,
-      percentage: Math.round((answeredQuestions / totalQuestions) * 100)
+      totalQuestions: totalRequired,
+      answeredQuestions: answeredRequired,
+      percentage: requiredPercentage,
+      matchingQuality,
+      optionalCompleted: answeredOptional,
+      totalOptional
     };
   };
 
+  console.log('🚀 Component rendering, goals.personality_style:', goals.personality_style);
   const progress = calculateProgress();
+  console.log('📈 Progress result:', progress);
 
   const transportOptions = ['auto', 'openbaar_vervoer', 'fiets', 'te_voet'];
   const weekDays = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag'];
@@ -369,21 +420,17 @@ const RiderOnboardingNew = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-blue-600">Stap {currentStep} van {totalSteps}</span>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500">
-                  {progress.answeredQuestions} van {progress.totalQuestions} vragen beantwoord ({progress.percentage}%)
-                </span>
-                {isSaving && (
-                  <span className="text-xs text-blue-600 flex items-center">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b border-blue-600 mr-1"></div>
-                    Opslaan...
-                  </span>
-                )}
-                {lastSaved && !isSaving && (
-                  <span className="text-xs text-green-600">
-                    Opgeslagen om {lastSaved.toLocaleTimeString()}
-                  </span>
-                )}
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <div className="text-sm text-gray-500">
+                    Verplicht: {progress.answeredQuestions}/{progress.totalQuestions} ({progress.percentage}%)
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    Matching kwaliteit: {progress.matchingQuality}% 
+                    <span className="ml-1">({progress.optionalCompleted}/{progress.totalOptional} optioneel)</span>
+                  </div>
+                </div>
+                {/* Auto-save status will be implemented later */}
               </div>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -743,12 +790,37 @@ const RiderOnboardingNew = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Persoonlijkheid stijl</label>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    console.log('🧹 CLEARING ALL personality styles');
+                    setGoals({...goals, personality_style: []});
+                  }}
+                  className="mb-2 px-3 py-1 text-xs bg-red-100 text-red-700 rounded border border-red-300 hover:bg-red-200"
+                >
+                  Clear All (TEST)
+                </button>
                 <div className="grid grid-cols-2 gap-2">
                   {personalityStyles.map(style => (
                     <button
                       key={style}
                       type="button"
-                      onClick={() => toggleArrayItem(goals.personality_style, style, (items) => setGoals({...goals, personality_style: items}))}
+                      onClick={() => {
+                        console.log('🔄 CLICKING personality style:', style);
+                        console.log('📊 BEFORE - personality_style array:', goals.personality_style);
+                        const isCurrentlySelected = goals.personality_style.includes(style);
+                        console.log('🔍 Is currently selected?', isCurrentlySelected);
+                        
+                        const newArray = isCurrentlySelected 
+                          ? goals.personality_style.filter(item => item !== style)
+                          : [...goals.personality_style, style];
+                        console.log('✅ AFTER - new personality_style array:', newArray);
+                        
+                        const newGoals = {...goals, personality_style: newArray};
+                        console.log('🎯 New goals object:', newGoals);
+                        setGoals(newGoals);
+                        console.log('🔄 setGoals called');
+                      }}
                       className={`p-2 text-sm rounded-lg border transition-colors ${
                         goals.personality_style.includes(style)
                           ? 'bg-blue-100 border-blue-500 text-blue-700'
