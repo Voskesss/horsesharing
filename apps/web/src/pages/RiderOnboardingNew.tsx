@@ -52,9 +52,9 @@ const RiderOnboardingNew = () => {
     comfort_levels: {
       traffic: false,
       outdoor_solo: false,
-      jumping_height: 0,
       nervous_horses: false,
-      young_horses: false
+      young_horses: false,
+      jumping_height: 0
     }
   });
 
@@ -806,22 +806,40 @@ const RiderOnboardingNew = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Comfort levels</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Waar heb je geen moeite mee? (comfort levels)</label>
                 <div className="space-y-3">
-                  {Object.entries(experience.comfort_levels).map(([key, value]) => (
-                    <label key={key} className="flex items-center">
+                  {[
+                    { key: 'traffic', label: 'Rijden in het verkeer' },
+                    { key: 'outdoor_solo', label: 'Alleen buitenrijden' },
+                    { key: 'nervous_horses', label: 'Nerveuze paarden' },
+                    { key: 'young_horses', label: 'Jonge paarden' }
+                  ].map(item => (
+                    <label key={item.key} className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={Boolean(value)}
+                        checked={experience.comfort_levels[item.key as keyof typeof experience.comfort_levels] || false}
                         onChange={(e) => setExperience({
                           ...experience,
-                          comfort_levels: {...experience.comfort_levels, [key]: e.target.checked}
+                          comfort_levels: {...experience.comfort_levels, [item.key]: e.target.checked}
                         })}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-700">{key.replace('_', ' ')}</span>
+                      <span className="text-sm">{item.label}</span>
                     </label>
                   ))}
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Maximale spronghoogte (cm)</label>
+                  <input
+                    type="number"
+                    value={experience.comfort_levels.jumping_height || ''}
+                    onChange={(e) => setExperience({
+                      ...experience,
+                      comfort_levels: {...experience.comfort_levels, jumping_height: parseInt(e.target.value) || 0}
+                    })}
+                    placeholder="bijv. 80"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
               </div>
             </motion.div>
