@@ -25,6 +25,32 @@ async def get_rider_profile(
         )
     return profile
 
+@router.post("/rider", response_model=RiderProfileResponse)
+async def create_rider_profile(
+    profile_data: RiderProfileCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create or update current user's rider profile"""
+    # Check if profile already exists
+    existing_profile = db.query(RiderProfile).filter(RiderProfile.user_id == current_user.id).first()
+    
+    if existing_profile:
+        # Update existing profile
+        for field, value in profile_data.dict(exclude_unset=True).items():
+            setattr(existing_profile, field, value)
+        db.commit()
+        db.refresh(existing_profile)
+        return existing_profile
+    else:
+        # Create new profile
+        profile_dict = profile_data.dict(exclude_unset=True)
+        profile = RiderProfile(user_id=current_user.id, **profile_dict)
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+        return profile
+
 @router.put("/rider", response_model=RiderProfileResponse)
 async def update_rider_profile(
     profile_data: RiderProfileUpdate,

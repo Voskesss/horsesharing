@@ -215,7 +215,7 @@ async def like_listing(
     
     return {"message": "Listing liked successfully"}
 
-@router.get("/matches", response_model=List[MutualMatch])
+@router.get("/matches")
 async def get_mutual_matches(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

@@ -22,6 +22,7 @@ class Horse(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    stable_id = Column(Integer, ForeignKey("stables.id"), nullable=True)
     
     # Basic info
     name = Column(String, nullable=False)
@@ -66,6 +67,7 @@ class Horse(Base):
     
     # Relationships
     owner = relationship("User", back_populates="horses")
+    stable = relationship("Stable", back_populates="horses")
     listings = relationship("Listing", back_populates="horse")
     
     def __repr__(self):

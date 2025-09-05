@@ -139,7 +139,6 @@ export const api = {
   // Owner Profile API calls - flexible structure for easy finetuning
   async createOwnerProfile(userToken: string, profileData: any) {
     console.log('Creating owner profile with user token');
-    console.log('Profile data:', profileData);
     
     const response = await fetch(`${API_BASE_URL}/api/v1/profiles/owner/`, {
       method: 'POST',
@@ -154,6 +153,48 @@ export const api = {
       const errorText = await response.text();
       console.error('Create owner profile error:', response.status, errorText);
       throw new Error(`Failed to create owner profile: ${response.status} - ${errorText}`);
+    }
+    
+    return response.json();
+  },
+
+  async updateRiderProfile(userToken: string, profileData: any) {
+    console.log('Updating rider profile with user token');
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/profiles/rider/`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profileData),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Update rider profile error:', response.status, errorText);
+      throw new Error(`Failed to update rider profile: ${response.status} - ${errorText}`);
+    }
+    
+    return response.json();
+  },
+
+  async updateOwnerProfile(userToken: string, profileData: any) {
+    console.log('Updating owner profile with user token');
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/profiles/owner/`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profileData),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Update owner profile error:', response.status, errorText);
+      throw new Error(`Failed to update owner profile: ${response.status} - ${errorText}`);
     }
     
     return response.json();
@@ -175,6 +216,66 @@ export const api = {
       const errorText = await response.text();
       console.error('Get owner profile error:', response.status, errorText);
       throw new Error(`Failed to get owner profile: ${response.status} - ${errorText}`);
+    }
+    
+    return response.json();
+  },
+
+  // Matching API calls
+  async getMatchCandidates(userToken: string, limit: number = 10) {
+    console.log('Getting match candidates with user token');
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/matching/candidates?limit=${limit}`, {
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Get match candidates error:', response.status, errorText);
+      throw new Error(`Failed to get match candidates: ${response.status} - ${errorText}`);
+    }
+    
+    return response.json();
+  },
+
+  async likeListing(userToken: string, listingId: number) {
+    console.log('Liking listing:', listingId);
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/matching/like`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ listing_id: listingId }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Like listing error:', response.status, errorText);
+      throw new Error(`Failed to like listing: ${response.status} - ${errorText}`);
+    }
+    
+    return response.json();
+  },
+
+  async getMutualMatches(userToken: string) {
+    console.log('Getting mutual matches with user token');
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/matching/matches`, {
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Get mutual matches error:', response.status, errorText);
+      throw new Error(`Failed to get mutual matches: ${response.status} - ${errorText}`);
     }
     
     return response.json();

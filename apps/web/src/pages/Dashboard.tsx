@@ -97,7 +97,7 @@ const Dashboard = () => {
                   </Link>
                 ) : (
                   <Link
-                    to={`/profile/${(userProfile as any)?.role}`}
+                    to={(userProfile as any)?.role === 'rider' ? '/profile/rider-new' : `/profile/${(userProfile as any)?.role}`}
                     className="bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors"
                   >
                     Profiel Aanvullen

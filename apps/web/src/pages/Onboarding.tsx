@@ -31,7 +31,7 @@ const Onboarding = () => {
         token = 'placeholder-token';
       }
       
-      await api.createUser(token, {
+      await api.createUser({
         role: type.toUpperCase() as 'RIDER' | 'OWNER' | 'BOTH',
         phone: undefined,
         is_minor: false
@@ -43,8 +43,11 @@ const Onboarding = () => {
       if (type === 'both') {
         // If both, let user choose which profile to fill first
         navigate('/profile-choice', { replace: true });
+      } else if (type === 'rider') {
+        // Use new comprehensive rider onboarding
+        navigate('/profile/rider-new', { replace: true });
       } else {
-        // If single role, go directly to that profile
+        // Owner still uses old profile page
         navigate(`/profile/${type}`, { replace: true });
       }
     } catch (error) {
@@ -53,7 +56,11 @@ const Onboarding = () => {
       console.log('API call failed, continuing with profile setup');
       if (type === 'both') {
         navigate('/profile-choice', { replace: true });
+      } else if (type === 'rider') {
+        // Use new comprehensive rider onboarding
+        navigate('/profile/rider-new', { replace: true });
       } else {
+        // Owner still uses old profile page
         navigate(`/profile/${type}`, { replace: true });
       }
     } finally {

@@ -116,10 +116,32 @@ async def get_current_user(
     
     user = db.query(User).filter(User.sub == user_sub).first()
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found. Please complete onboarding first."
-        )
+        # Auto-create user from Kinde token on first login
+        try:
+            # Get user info from Kinde token
+            email = payload.get("email", f"{user_sub}@temp.com")  # Fallback email
+            
+            # Create new user with default role
+            user = User(
+                sub=user_sub,
+                email=email,
+                role=UserRole.RIDER,  # Default to rider, can be changed later
+                is_minor=False
+            )
+            
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            
+            print(f"DEBUG: Auto-created user {user.email} with sub {user_sub}")
+            
+        except Exception as e:
+            db.rollback()
+            print(f"ERROR: Failed to create user: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create user account"
+            )
     
     return user
 

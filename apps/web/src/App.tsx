@@ -16,6 +16,7 @@ import Horses from './pages/Horses';
 import Callback from './pages/Callback';
 import ProfileChoice from './pages/ProfileChoice';
 import RiderProfile from './pages/RiderProfile';
+import RiderOnboardingNew from './pages/RiderOnboardingNew';
 import OwnerProfile from './pages/OwnerProfile';
 
 function App() {
@@ -71,6 +72,11 @@ function App() {
           <Route path="/profile/rider" element={
             <ProtectedRoute>
               <RiderProfile />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/rider-new" element={
+            <ProtectedRoute>
+              <RiderOnboardingNew />
             </ProtectedRoute>
           } />
           <Route path="/profile/owner" element={

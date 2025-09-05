@@ -24,15 +24,51 @@ const RiderProfile = () => {
     dateOfBirth: '',
   });
 
-  // Ruiter voorkeuren
+  // Ruiter voorkeuren - uitgebreid met alle matching velden
   const [riderPreferences, setRiderPreferences] = useState({
+    // Basis ervaring
     experience: '',
+    experienceYears: '',
+    certificationLevel: '',
+    comfortLevels: [] as string[],
+    
+    // Disciplines en doelen
     disciplines: [] as string[],
+    disciplinePreferences: [] as string[],
+    ridingGoals: [] as string[],
+    
+    // Locatie en reizen
+    maxTravelDistance: '',
+    
+    // Beschikbaarheid
+    availability: [] as string[],
+    timeBlocks: [] as string[],
+    sessionDuration: '',
+    
+    // Budget
+    budgetMin: '',
+    budgetMax: '',
+    budgetType: 'monthly',
+    
+    // Persoonlijkheid en stijl
+    personalityStyle: [] as string[],
+    
+    // Taken en verantwoordelijkheden
+    willingTasks: [] as string[],
+    taskFrequency: '',
+    
+    // Materiaal voorkeuren
+    materialPreferences: [] as string[],
+    
+    // Gezondheid en restricties
+    healthRestrictions: '',
+    insuranceCoverage: '',
+    
+    // Legacy velden
     preferredAge: '',
     preferredSize: '',
     location: '',
     maxDistance: '',
-    availability: [] as string[],
     goals: '',
     description: '',
   });
@@ -147,7 +183,7 @@ const RiderProfile = () => {
   };
 
   const nextStep = () => {
-    if (currentStep < 3) setCurrentStep(currentStep + 1);
+    if (currentStep < 6) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
@@ -157,6 +193,12 @@ const RiderProfile = () => {
   const disciplines = ['Dressuur', 'Springen', 'Eventing', 'Western', 'Recreatief', 'Buitenritten'];
   const experienceLevels = ['Beginner', 'Gevorderd beginner', 'Intermediate', 'Gevorderd', 'Expert'];
   const weekDays = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'];
+  const timeBlocks = ['Ochtend (8-12)', 'Middag (12-17)', 'Avond (17-21)'];
+  const comfortLevels = ['Beginner paarden', 'Ervaren paarden', 'Jonge paarden', 'Gevoelige paarden'];
+  const ridingGoals = ['Recreatief rijden', 'Wedstrijden', 'Training verbeteren', 'Angst overwinnen', 'Nieuwe discipline leren'];
+  const personalityStyles = ['Rustig en geduldig', 'Energiek en spontaan', 'Gestructureerd', 'Flexibel', 'Competitief'];
+  const willingTasksList = ['Poetsen', 'Voeren', 'Paddock uitmesten', 'Stalwerk', 'Transport hulp'];
+  const materialPrefs = ['Eigen zadel', 'Eigen hoofdstel', 'Stal materiaal', 'Geen voorkeur'];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -180,13 +222,13 @@ const RiderProfile = () => {
           {/* Progress */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-blue-600">Stap {currentStep} van 3</span>
-              <span className="text-sm text-gray-500">{Math.round((currentStep / 3) * 100)}% voltooid</span>
+              <span className="text-sm font-medium text-blue-600">Stap {currentStep} van 6</span>
+              <span className="text-sm text-gray-500">{Math.round((currentStep / 6) * 100)}% voltooid</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / 3) * 100}%` }}
+                style={{ width: `${(currentStep / 6) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -285,28 +327,114 @@ const RiderProfile = () => {
             </motion.div>
           )}
 
-          {/* Step 2: Ruiter Voorkeuren */}
+          {/* Step 2: Ervaring & Niveau */}
           {currentStep === 2 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="space-y-6"
             >
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Ruiter Voorkeuren</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Ervaring & Niveau</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Ervaring niveau</label>
+                  <select
+                    value={riderPreferences.experience}
+                    onChange={(e) => handlePreferenceChange('experience', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Selecteer je ervaring</option>
+                    {experienceLevels.map(level => (
+                      <option key={level} value={level}>{level}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Jaren ervaring</label>
+                  <input
+                    type="number"
+                    value={riderPreferences.experienceYears}
+                    onChange={(e) => handlePreferenceChange('experienceYears', e.target.value)}
+                    placeholder="bijv. 5"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ervaring</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Certificeringen</label>
+                <input
+                  type="text"
+                  value={riderPreferences.certificationLevel}
+                  onChange={(e) => handlePreferenceChange('certificationLevel', e.target.value)}
+                  placeholder="bijv. Galop 3, FNRS instructeur"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Comfort niveau met paarden</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {comfortLevels.map(level => (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => {
+                        const current = riderPreferences.comfortLevels;
+                        const updated = current.includes(level)
+                          ? current.filter(l => l !== level)
+                          : [...current, level];
+                        handlePreferenceChange('comfortLevels', updated);
+                      }}
+                      className={`p-2 text-sm rounded-lg border transition-colors ${
+                        riderPreferences.comfortLevels.includes(level)
+                          ? 'bg-blue-100 border-blue-500 text-blue-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {level}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Verzekering</label>
                 <select
-                  value={riderPreferences.experience}
-                  onChange={(e) => handlePreferenceChange('experience', e.target.value)}
+                  value={riderPreferences.insuranceCoverage}
+                  onChange={(e) => handlePreferenceChange('insuranceCoverage', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Selecteer je ervaring</option>
-                  {experienceLevels.map(level => (
-                    <option key={level} value={level}>{level}</option>
-                  ))}
+                  <option value="">Selecteer verzekering</option>
+                  <option value="avp">AVP (Aansprakelijkheidsverzekering)</option>
+                  <option value="wa">WA verzekering</option>
+                  <option value="both">Beide</option>
+                  <option value="none">Geen</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Gezondheidsrestricties</label>
+                <textarea
+                  value={riderPreferences.healthRestrictions}
+                  onChange={(e) => handlePreferenceChange('healthRestrictions', e.target.value)}
+                  placeholder="Eventuele beperkingen of aandachtspunten"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 3: Doelen & Voorkeuren */}
+          {currentStep === 3 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="space-y-6"
+            >
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Doelen & Voorkeuren</h2>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Disciplines</label>
@@ -323,6 +451,58 @@ const RiderProfile = () => {
                       }`}
                     >
                       {discipline}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rijdoelen</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {ridingGoals.map(goal => (
+                    <button
+                      key={goal}
+                      type="button"
+                      onClick={() => {
+                        const current = riderPreferences.ridingGoals;
+                        const updated = current.includes(goal)
+                          ? current.filter(g => g !== goal)
+                          : [...current, goal];
+                        handlePreferenceChange('ridingGoals', updated);
+                      }}
+                      className={`p-2 text-sm rounded-lg border transition-colors ${
+                        riderPreferences.ridingGoals.includes(goal)
+                          ? 'bg-blue-100 border-blue-500 text-blue-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {goal}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Persoonlijkheidsstijl</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {personalityStyles.map(style => (
+                    <button
+                      key={style}
+                      type="button"
+                      onClick={() => {
+                        const current = riderPreferences.personalityStyle;
+                        const updated = current.includes(style)
+                          ? current.filter(s => s !== style)
+                          : [...current, style];
+                        handlePreferenceChange('personalityStyle', updated);
+                      }}
+                      className={`p-2 text-sm rounded-lg border transition-colors ${
+                        riderPreferences.personalityStyle.includes(style)
+                          ? 'bg-blue-100 border-blue-500 text-blue-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {style}
                     </button>
                   ))}
                 </div>
@@ -352,28 +532,51 @@ const RiderProfile = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Locatie voorkeur</label>
-                <input
-                  type="text"
-                  value={riderPreferences.location}
-                  onChange={(e) => handlePreferenceChange('location', e.target.value)}
-                  placeholder="Stad of regio"
+                <label className="block text-sm font-medium text-gray-700 mb-2">Over jezelf</label>
+                <textarea
+                  value={riderPreferences.description}
+                  onChange={(e) => handlePreferenceChange('description', e.target.value)}
+                  placeholder="Vertel iets over jezelf als ruiter..."
+                  rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+            </motion.div>
+          )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Maximale afstand (km)</label>
-                <input
-                  type="number"
-                  value={riderPreferences.maxDistance}
-                  onChange={(e) => handlePreferenceChange('maxDistance', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+          {/* Step 4: Locatie & Beschikbaarheid */}
+          {currentStep === 4 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="space-y-6"
+            >
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Locatie & Beschikbaarheid</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Locatie voorkeur</label>
+                  <input
+                    type="text"
+                    value={riderPreferences.location}
+                    onChange={(e) => handlePreferenceChange('location', e.target.value)}
+                    placeholder="Stad of regio"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Max reisafstand (km)</label>
+                  <input
+                    type="number"
+                    value={riderPreferences.maxTravelDistance}
+                    onChange={(e) => handlePreferenceChange('maxTravelDistance', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Beschikbaarheid</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Beschikbare dagen</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {weekDays.map(day => (
                     <button
@@ -393,31 +596,151 @@ const RiderProfile = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Doelen</label>
-                <textarea
-                  value={riderPreferences.goals}
-                  onChange={(e) => handlePreferenceChange('goals', e.target.value)}
-                  placeholder="Wat wil je bereiken met rijden?"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tijdsblokken</label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  {timeBlocks.map(block => (
+                    <button
+                      key={block}
+                      type="button"
+                      onClick={() => {
+                        const current = riderPreferences.timeBlocks;
+                        const updated = current.includes(block)
+                          ? current.filter(b => b !== block)
+                          : [...current, block];
+                        handlePreferenceChange('timeBlocks', updated);
+                      }}
+                      className={`p-2 text-sm rounded-lg border transition-colors ${
+                        riderPreferences.timeBlocks.includes(block)
+                          ? 'bg-blue-100 border-blue-500 text-blue-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {block}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Over jezelf</label>
-                <textarea
-                  value={riderPreferences.description}
-                  onChange={(e) => handlePreferenceChange('description', e.target.value)}
-                  placeholder="Vertel iets over jezelf als ruiter..."
-                  rows={4}
+                <label className="block text-sm font-medium text-gray-700 mb-2">Gewenste sessieduur</label>
+                <select
+                  value={riderPreferences.sessionDuration}
+                  onChange={(e) => handlePreferenceChange('sessionDuration', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                >
+                  <option value="">Selecteer duur</option>
+                  <option value="30min">30 minuten</option>
+                  <option value="1hour">1 uur</option>
+                  <option value="1.5hours">1,5 uur</option>
+                  <option value="2hours">2 uur</option>
+                  <option value="flexible">Flexibel</option>
+                </select>
               </div>
             </motion.div>
           )}
 
-          {/* Step 3: Media Upload */}
-          {currentStep === 3 && (
+          {/* Step 5: Budget & Taken */}
+          {currentStep === 5 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="space-y-6"
+            >
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Budget & Taken</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Budget min (€/maand)</label>
+                  <input
+                    type="number"
+                    value={riderPreferences.budgetMin}
+                    onChange={(e) => handlePreferenceChange('budgetMin', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Budget max (€/maand)</label>
+                  <input
+                    type="number"
+                    value={riderPreferences.budgetMax}
+                    onChange={(e) => handlePreferenceChange('budgetMax', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bereid tot stalwerk</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {willingTasksList.map(task => (
+                    <button
+                      key={task}
+                      type="button"
+                      onClick={() => {
+                        const current = riderPreferences.willingTasks;
+                        const updated = current.includes(task)
+                          ? current.filter(t => t !== task)
+                          : [...current, task];
+                        handlePreferenceChange('willingTasks', updated);
+                      }}
+                      className={`p-2 text-sm rounded-lg border transition-colors ${
+                        riderPreferences.willingTasks.includes(task)
+                          ? 'bg-blue-100 border-blue-500 text-blue-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {task}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Frequentie stalwerk</label>
+                <select
+                  value={riderPreferences.taskFrequency}
+                  onChange={(e) => handlePreferenceChange('taskFrequency', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Selecteer frequentie</option>
+                  <option value="never">Nooit</option>
+                  <option value="rarely">Zelden</option>
+                  <option value="sometimes">Soms</option>
+                  <option value="often">Vaak</option>
+                  <option value="always">Altijd</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Materiaal voorkeuren</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {materialPrefs.map(pref => (
+                    <button
+                      key={pref}
+                      type="button"
+                      onClick={() => {
+                        const current = riderPreferences.materialPreferences;
+                        const updated = current.includes(pref)
+                          ? current.filter(p => p !== pref)
+                          : [...current, pref];
+                        handlePreferenceChange('materialPreferences', updated);
+                      }}
+                      className={`p-2 text-sm rounded-lg border transition-colors ${
+                        riderPreferences.materialPreferences.includes(pref)
+                          ? 'bg-blue-100 border-blue-500 text-blue-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pref}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 6: Media Upload */}
+          {currentStep === 6 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -492,7 +815,7 @@ const RiderProfile = () => {
               Vorige
             </button>
 
-            {currentStep < 3 ? (
+            {currentStep < 6 ? (
               <button
                 onClick={nextStep}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
