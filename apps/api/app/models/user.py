@@ -30,6 +30,8 @@ class User(Base):
     reviews_given = relationship("Review", back_populates="reviewer", foreign_keys="Review.reviewer_id")
     reviews_received = relationship("Review", back_populates="reviewee", foreign_keys="Review.reviewee_user_id")
     reports_made = relationship("ModerationReport", back_populates="reporter")
+    bookings_as_rider = relationship("Booking", back_populates="rider", foreign_keys="Booking.rider_id")
+    bookings_as_owner = relationship("Booking", back_populates="owner", foreign_keys="Booking.owner_id")
     
     def __repr__(self):
         return f"<User {self.email}>"
